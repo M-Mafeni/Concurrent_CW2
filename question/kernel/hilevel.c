@@ -20,12 +20,12 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
     next_pid = '0' + next->pid;
   }
 
-    PL011_putc( UART0, '[',      true );
-    PL011_putc( UART0, prev_pid, true );
-    PL011_putc( UART0, '-',      true );
-    PL011_putc( UART0, '>',      true );
-    PL011_putc( UART0, next_pid, true );
-    PL011_putc( UART0, ']',      true );
+//     PL011_putc( UART0, '[',      true );
+//     PL011_putc( UART0, prev_pid, true );
+//     PL011_putc( UART0, '-',      true );
+//     PL011_putc( UART0, '>',      true );
+//     PL011_putc( UART0, next_pid, true );
+//     PL011_putc( UART0, ']',      true );
 
     current = next;                             // update   executing index   to P_{next}
 
@@ -36,7 +36,7 @@ void schedule( ctx_t* ctx ) {
   if     ( current->pid == pcb[ 0 ].pid ) {
     dispatch( ctx, &pcb[ 0 ], &pcb[ 1 ] );      // context switch P_1 -> P_2
 
-    pcb[ 0 ].status = STATUS_READY;             // update   execution status  of P_1 
+    pcb[ 0 ].status = STATUS_READY;             // update   execution status  of P_1
     pcb[ 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
   }
   else if( current->pid == pcb[ 1 ].pid ) {
@@ -49,18 +49,18 @@ void schedule( ctx_t* ctx ) {
   return;
 }
 
-extern void     main_P3(); 
+extern void     main_P3();
 extern uint32_t tos_P3;
-extern void     main_P4(); 
+extern void     main_P4();
 extern uint32_t tos_P4;
 
-void hilevel_handler_rst( ctx_t* ctx              ) { 
-  /* Initialise two PCBs, representing user processes stemming from execution 
+void hilevel_handler_rst( ctx_t* ctx              ) {
+  /* Initialise two PCBs, representing user processes stemming from execution
    * of two user programs.  Note in each case that
-   *    
-   * - the CPSR value of 0x50 means the processor is switched into USR mode, 
+   *
+   * - the CPSR value of 0x50 means the processor is switched into USR mode,
    *   with IRQ interrupts enabled, and
-   * - the PC and SP values matche the entry point and top of stack. 
+   * - the PC and SP values matche the entry point and top of stack.
    */
 
   memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_1
@@ -77,8 +77,8 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
   pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
 
-  /* Once the PCBs are initialised, we arbitrarily select the one in the 0-th 
-   * PCB to be executed: there is no need to preserve the execution context, 
+  /* Once the PCBs are initialised, we arbitrarily select the one in the 0-th
+   * PCB to be executed: there is no need to preserve the execution context,
    * since it is is invalid on reset (i.e., no process will previously have
    * been executing).
    */
