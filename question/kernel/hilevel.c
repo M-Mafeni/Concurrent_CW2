@@ -33,7 +33,21 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
 }
 //schedule based on priority
 void schedule_priority(ctx_t* ctx){
-
+    int length = sizeof(pcb) / sizeof(pcb[0]);
+    for(int i = 0; i < length; i++){
+        if(current->pid == pcb[i].pid){
+            int next = (i + 1) % length;
+            dispatch(ctx, &pcb[i], &pcb[next]);
+            for(int j = 0; j < length; j++){
+                if(j != next){
+                    pcb[next].status = STATUS_READY;
+                }
+            }
+            pcb[next].status = STATUS_EXECUTING;
+            break;
+        }
+    }
+    return;
 }
 
 void schedule_round_robin( ctx_t* ctx ) {
@@ -110,7 +124,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
-    schedule_round_robin(ctx); TIMER0->Timer1IntClr = 0x01;
+    schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
   }
 
   // Step 5: write the interrupt identifier to signal we're done.
