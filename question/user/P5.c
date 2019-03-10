@@ -22,9 +22,7 @@ int is_prime( uint32_t x ) {
 }
 
 void main_P5() {
-  //for( int i = 0; i < 25; i++ ) {
-  //made P5 infinite for now change back
-  while(1){
+  for( int i = 0; i < 25; i++ ) {
     write( STDOUT_FILENO, "P5", 2 );
 
     uint32_t lo = 1 <<  8;

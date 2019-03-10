@@ -31,15 +31,34 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
 
   return;
 }
+
+void terminate_process(ctx_t* ctx){
+    int length = sizeof(pcb) / sizeof(pcb[0]);
+    for(int i = 0; i < length; i++){
+        if(current->pid == pcb[i].pid){
+            pcb[i].status = STATUS_TERMINATED;
+        }
+    }
+}
+//checks whether a process has been terminated
+int is_terminated(pcb_t process){
+    return process.status == STATUS_TERMINATED;
+}
 //schedule based on priority
 void schedule_priority(ctx_t* ctx){
     int length = sizeof(pcb) / sizeof(pcb[0]);
     for(int i = 0; i < length; i++){
         if(current->pid == pcb[i].pid){
             int next = (i + 1) % length;
-            dispatch(ctx, &pcb[i], &pcb[next]);
+            while(next != i){
+                if(!is_terminated(pcb[next])){
+                    dispatch(ctx, &pcb[i], &pcb[next]);
+                    break;
+                }
+                next = (next + 1) % length;
+            }
             for(int j = 0; j < length; j++){
-                if(j != next){
+                if(j != next && !is_terminated(pcb[j])){
                     pcb[j].status = STATUS_READY;
                 }
             }
@@ -74,8 +93,8 @@ extern void     main_P5();
 extern uint32_t tos_P5;
 
 void hilevel_handler_rst( ctx_t* ctx              ) {
-    /* Initialise two PCBs, representing user processes stemming from execution
-    * of two user programs.  Note in each case that
+    /* Initialises PCBs, representing user processes stemming from execution
+    * of user programs.  Note in each case that
     *
     * - the CPSR value of 0x50 means the processor is switched into USR mode,
     *   with IRQ interrupts enabled, and
@@ -153,7 +172,11 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             ctx->gpr[ 0 ] = n;
             break;
         }
-
+        case 0x04 : {
+            terminate_process(ctx);
+            schedule_priority(ctx);
+            break;
+        }
         default : { //case 0x0?
             break;
         }
