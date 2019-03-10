@@ -21,6 +21,8 @@
 
 #include   "GIC.h"
 #include "PL011.h"
+#include "SP804.h"
+
 
 // Include functionality relating to the   kernel.
 
@@ -46,6 +48,7 @@ typedef struct {
      pid_t    pid;
   status_t status;
      ctx_t    ctx;
+     int priority;
 } pcb_t;
 
 #endif
