@@ -24,7 +24,7 @@
 #include "SP804.h"
 
 
-// Include functionality relating to the   kernel.
+// Include functionality relating to the kernel.
 
 #include "lolevel.h"
 #include     "int.h"
@@ -49,6 +49,7 @@ typedef struct {
   status_t status;
      ctx_t    ctx;
      int priority;
+     int priority_change;
 } pcb_t;
 
 #endif

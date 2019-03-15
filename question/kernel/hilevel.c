@@ -9,7 +9,7 @@
 pcb_t pcb[ 3 ]; pcb_t* current = NULL;
 int length = sizeof(pcb) / sizeof(pcb[0]);
 
-
+//reset priority, add priorities
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
 
@@ -34,7 +34,7 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   return;
 }
 
-void terminate_process(ctx_t* ctx){
+void terminate_process(){
     int length = sizeof(pcb) / sizeof(pcb[0]);
     for(int i = 0; i < length; i++){
         if(current->pid == pcb[i].pid){
@@ -48,6 +48,7 @@ int is_terminated(pcb_t process){
 }
 //schedule based on round-robin method
 void schedule_round_robin(ctx_t* ctx){
+    int next;
     for(int i = 0; i < length; i++){
         if(current->pid == pcb[i].pid){
             int next = (i + 1) % length;
@@ -65,6 +66,40 @@ void schedule_round_robin(ctx_t* ctx){
             }
             pcb[next].status = STATUS_EXECUTING;
             break;
+        }
+    }
+    return;
+}
+//returns the index of the pcb block with the highest priority
+// that's not terminated
+int getMax(){
+    int max_priority = -1;
+    int max_index = -1;
+    for( int i = 0; i < length; i++){
+        if(pcb[i].priority > max_priority && !is_terminated(pcb[i])){
+            max_priority = pcb[i].priority;
+            max_index = i;
+        }
+    }
+    return max_index;
+}
+void schedule_priority(ctx_t* ctx){
+    int max = getMax();
+    //int current_id = -1;
+    //possibly decrease the priority of the current block
+    for(int i = 0; i < length; i++){
+        if(current->pid == pcb[i].pid){
+            dispatch(ctx, &pcb[i], &pcb[max]);
+            pcb[max].priority -= pcb[max].priority_change;
+            pcb[max].status = STATUS_EXECUTING;
+            break;
+        }
+    }
+    //increase the priorities of all the blocks that weren't picked
+    for(int j =0; j< length; j++){
+        if(j != max && !is_terminated(pcb[j])){
+            pcb[j].status = STATUS_READY;
+            pcb[j].priority += pcb[j].priority_change;
         }
     }
     return;
@@ -112,14 +147,15 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     *   with IRQ interrupts enabled, and
     * - the PC and SP values match the entry point and top of stack.
     */
-
+    PL011_putc(UART0,'R',true);
     memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_3
     pcb[ 0 ].pid      = 1;
     pcb[ 0 ].status   = STATUS_CREATED;
     pcb[ 0 ].ctx.cpsr = 0x50;
     pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
     pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
-    pcb[ 0 ].priority = 1;
+    pcb[ 0 ].priority_change = 1;
+    pcb[ 0 ].priority = 20;
 
     memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_4
     pcb[ 1 ].pid      = 2;
@@ -127,7 +163,9 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     pcb[ 1 ].ctx.cpsr = 0x50;
     pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
     pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
-    pcb[ 1 ].priority = 2;
+    pcb[ 1 ].priority_change = 2;
+    pcb[ 1 ].priority = 20;
+
 
     memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 2-nd PCB = P_5
     pcb[ 2 ].pid      = 3;
@@ -135,7 +173,9 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     pcb[ 2 ].ctx.cpsr = 0x50;
     pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
     pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
-    pcb[ 2 ].priority = 3;
+    pcb[ 2 ].priority_change = 10;
+    pcb[ 2 ].priority = 20;
+
 
     TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
     TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
@@ -149,7 +189,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
     //sort pcb in descending order of the priorities
-    sort(pcb);
+    //sort(pcb);
     dispatch( ctx, NULL, &pcb[ 0 ] );
     int_enable_irq();
     return;
@@ -163,7 +203,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
-    schedule_round_robin(ctx); TIMER0->Timer1IntClr = 0x01;
+    schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
   }
 
   // Step 5: write the interrupt identifier to signal we're done.
@@ -185,8 +225,8 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             break;
         }
         case 0x04 : {  //exit call
-            terminate_process(ctx);
-            schedule_round_robin(ctx);
+            terminate_process();
+            schedule_priority(ctx);
             break;
         }
         default : { //case 0x0?
