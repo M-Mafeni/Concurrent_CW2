@@ -85,16 +85,19 @@ int getMax(){
 }
 void schedule_priority(ctx_t* ctx){
     int max = getMax();
-    //int current_id = -1;
+    dispatch(ctx, current, &pcb[max]);
+    //figure out best way to reset value
+  //  pcb[max].priority = pcb[max].base_priority;
+    pcb[max].status = STATUS_EXECUTING;
     //possibly decrease the priority of the current block
-    for(int i = 0; i < length; i++){
-        if(current->pid == pcb[i].pid){
-            dispatch(ctx, &pcb[i], &pcb[max]);
-            pcb[max].priority -= pcb[max].priority_change;
-            pcb[max].status = STATUS_EXECUTING;
-            break;
-        }
-    }
+//     for(int i = 0; i < length; i++){
+//         if(current->pid == pcb[i].pid){
+//             dispatch(ctx, &pcb[i], &pcb[max]);
+//             pcb[max].priority -= pcb[max].priority_change;
+//             pcb[max].status = STATUS_EXECUTING;
+//             break;
+//         }
+//     }
     //increase the priorities of all the blocks that weren't picked
     for(int j =0; j< length; j++){
         if(j != max && !is_terminated(pcb[j])){
@@ -154,8 +157,9 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     pcb[ 0 ].ctx.cpsr = 0x50;
     pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
     pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
-    pcb[ 0 ].priority_change = 1;
+    pcb[ 0 ].priority_change = 5;
     pcb[ 0 ].priority = 20;
+    //pcb[ 0 ].base_priority = 20;
 
     memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );     // initialise 1-st PCB = P_4
     pcb[ 1 ].pid      = 2;
@@ -163,8 +167,10 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     pcb[ 1 ].ctx.cpsr = 0x50;
     pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
     pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
-    pcb[ 1 ].priority_change = 2;
+    pcb[ 1 ].priority_change = 10;
     pcb[ 1 ].priority = 20;
+   // pcb[ 1 ].base_priority = 20;
+
 
 
     memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 2-nd PCB = P_5
@@ -173,8 +179,10 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     pcb[ 2 ].ctx.cpsr = 0x50;
     pcb[ 2 ].ctx.pc   = ( uint32_t )( &main_P5 );
     pcb[ 2 ].ctx.sp   = ( uint32_t )( &tos_P5  );
-    pcb[ 2 ].priority_change = 10;
-    pcb[ 2 ].priority = 20;
+    pcb[ 2 ].priority_change = 1;
+    pcb[ 2 ].priority = 30;
+ //   pcb[ 2 ].base_priority = 30;
+
 
 
     TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
@@ -190,7 +198,8 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
 
     //sort pcb in descending order of the priorities
     //sort(pcb);
-    dispatch( ctx, NULL, &pcb[ 0 ] );
+    int max = getMax();
+    dispatch( ctx, NULL, &pcb[ max ] );
     int_enable_irq();
     return;
 }
