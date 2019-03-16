@@ -7,6 +7,7 @@
 
 #include "hilevel.h"
 pcb_t pcb[ 4 ]; pcb_t* current = NULL;
+pcb_t console;
 int length = sizeof(pcb) / sizeof(pcb[0]);
 
 //reset priority, add priorities
@@ -22,12 +23,12 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
     next_pid = '0' + next->pid;
   }
 
-    // PL011_putc( UART0, '[',      true );
-    // PL011_putc( UART0, prev_pid, true );
-    // PL011_putc( UART0, '-',      true );
-    // PL011_putc( UART0, '>',      true );
-    // PL011_putc( UART0, next_pid, true );
-    // PL011_putc( UART0, ']',      true );
+//     PL011_putc( UART0, '[',      true );
+//     PL011_putc( UART0, prev_pid, true );
+//     PL011_putc( UART0, '-',      true );
+//     PL011_putc( UART0, '>',      true );
+//     PL011_putc( UART0, next_pid, true );
+//     PL011_putc( UART0, ']',      true );
 
     current = next;                             // update   executing index   to P_{next}
 
@@ -99,7 +100,7 @@ void schedule_priority(ctx_t* ctx){
     return;
 }
 void invoke_console(ctx_t* ctx){
-    dispatch(ctx,&pcb[3],&pcb[3]);
+    dispatch(ctx,&console,&console);
 }
 
 extern void     main_P3();
@@ -120,7 +121,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     * - the PC and SP values match the entry point and top of stack.
     */
     PL011_putc(UART0,'R',true);
-    memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_3
+/*    memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );     // initialise 0-th PCB = P_3
     pcb[ 0 ].pid      = 1;
     pcb[ 0 ].status   = STATUS_CREATED;
     pcb[ 0 ].ctx.cpsr = 0x50;
@@ -140,8 +141,6 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     pcb[ 1 ].priority = 20;
    // pcb[ 1 ].base_priority = 20;
 
-
-
     memset( &pcb[ 2 ], 0, sizeof( pcb_t ) );     // initialise 2-nd PCB = P_5
     pcb[ 2 ].pid      = 3;
     pcb[ 2 ].status   = STATUS_CREATED;
@@ -158,10 +157,18 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     pcb[ 3 ].ctx.pc   = ( uint32_t )( &main_console );
     pcb[ 3 ].ctx.sp   = ( uint32_t )( &tos_console  );
     pcb[ 3 ].priority_change = 1;
-    pcb[ 3 ].priority = 30;
+    pcb[ 3 ].priority = 30; */
 
-
-
+    memset(&console, 0, sizeof(pcb_t));
+    console.pid = 1;
+    console.status   = STATUS_CREATED;
+    console.ctx.cpsr = 0x50;
+    console.ctx.pc   = ( uint32_t )( &main_console );
+    console.ctx.sp   = ( uint32_t )( &tos_console  );
+    console.priority_change = 1;
+    console.priority = 30;
+//      console = (pcb_t){(1),STATUS_CREATED,0x50,(( uint32_t )( &main_console )),
+//         (( uint32_t )( &tos_console  )),0,0};
     TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
     TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
     TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
@@ -176,7 +183,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     //sort pcb in descending order of the priorities
     //sort(pcb);
     int max = getMax();
-    dispatch( ctx, NULL, &pcb[ 3] );
+    dispatch( ctx, NULL, &console );
     int_enable_irq();
     return;
 }
@@ -210,7 +217,7 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             ctx->gpr[ 0 ] = n;
             break;
         }
-        case 0x03 : {
+        case 0x03 : { //fork call
             PL011_putc(UART0, 't', true);
             break;
         }
