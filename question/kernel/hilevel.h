@@ -50,6 +50,7 @@ typedef struct {
      ctx_t    ctx;
      int priority;
      int priority_change;
+     int isChild;
 } pcb_t;
 
 #endif
