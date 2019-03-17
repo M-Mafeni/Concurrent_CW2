@@ -116,7 +116,7 @@ int getUniqueId(){
 void exec_program(ctx_t* ctx,uint32_t address){
     pcb_t replacement;
     memset(&replacement, 0, sizeof(pcb_t));
-    replacement.pid = getUniqueId();
+    replacement.pid = current->pid;
     replacement.status = STATUS_CREATED;
     replacement.ctx.cpsr = ctx->cpsr;
     replacement.ctx.pc = address;
