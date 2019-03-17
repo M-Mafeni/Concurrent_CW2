@@ -106,6 +106,7 @@ void schedule_priority_pointer(ctx_t* ctx){
             pcbPointer[i]->priority += pcbPointer[i]->priority_change;
         }
     }
+    return;
 }
 void schedule_priority(ctx_t* ctx){
     int max = getMax();
@@ -180,15 +181,15 @@ void create_new_process_pointer(ctx_t* ctx){
     memset(&child, 0, sizeof(pcb_t));
     child.pid = getUniqueIdPointer();
     child.status = STATUS_CREATED;
-    child.ctx.cpsr = ctx->cpsr;
-    child.ctx.pc = ctx->pc;
-    child.priority = current->priority + 10;
-    child.priority_change = current->priority_change + 5;
+    child.ctx.cpsr = current->ctx.cpsr;
+    child.ctx.pc = current->ctx.pc;
+    child.priority = current->priority;
+    child.priority_change = current->priority_change;
     child.child = NULL;
     child.isChild = 1;
-    memcpy(child.ctx.gpr,ctx->gpr,sizeof(child.ctx.gpr));
-    child.ctx.sp = ctx->sp;
-    child.ctx.lr = ctx->lr;
+    memcpy(child.ctx.gpr,current->ctx.gpr,sizeof(child.ctx.gpr));
+    child.ctx.sp = current->ctx.sp;
+    child.ctx.lr = current->ctx.lr;
     //put process in queue
     pcbPointer[child.pid] = &child;
     current->child = &child;
