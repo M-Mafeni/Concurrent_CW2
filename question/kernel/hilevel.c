@@ -132,11 +132,11 @@ int create_new_process(ctx_t* ctx){
     memset(&child, 0, sizeof(pcb_t));
     child.pid = getUniqueId();
     child.status = STATUS_CREATED;
-    child.ctx.cpsr = ctx->cpsr;
-    child.ctx.pc = ctx->pc;
-    memcpy(child.ctx.gpr,ctx->gpr,sizeof(child.ctx.gpr));
-    child.ctx.sp = ctx->sp;
-    child.ctx.lr = ctx->lr;
+    child.ctx.cpsr = current->ctx.cpsr;
+    child.ctx.pc = current->ctx.pc;
+    memcpy(child.ctx.gpr,current->ctx.gpr,sizeof(child.ctx.gpr));
+    child.ctx.sp = current->ctx.sp;
+    child.ctx.lr = current->ctx.lr;
     child.priority = current->priority;
     child.priority_change = current->priority_change;
     //put process in queue
