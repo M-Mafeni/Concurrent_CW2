@@ -44,13 +44,13 @@ typedef struct {
   uint32_t cpsr, pc, gpr[ 13 ], sp, lr;
 } ctx_t ;
 
-typedef struct {
+typedef struct  pcb_t{
      pid_t    pid;
   status_t status;
      ctx_t    ctx;
      int priority;
      int priority_change;
-     int isChild;
+     struct pcb_t* child;
 } pcb_t;
 
 #endif

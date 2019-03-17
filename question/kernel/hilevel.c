@@ -23,12 +23,12 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
     next_pid = '0' + next->pid;
   }
 
-    PL011_putc( UART0, '[',      true );
-    PL011_putc( UART0, prev_pid, true );
-    PL011_putc( UART0, '-',      true );
-    PL011_putc( UART0, '>',      true );
-    PL011_putc( UART0, next_pid, true );
-    PL011_putc( UART0, ']',      true );
+    // PL011_putc( UART0, '[',      true );
+    // PL011_putc( UART0, prev_pid, true );
+    // PL011_putc( UART0, '-',      true );
+    // PL011_putc( UART0, '>',      true );
+    // PL011_putc( UART0, next_pid, true );
+    // PL011_putc( UART0, ']',      true );
 
     current = next;                             // update   executing index   to P_{next}
 
@@ -116,18 +116,18 @@ void exec_program(ctx_t* ctx,uint32_t address){
     memset(&replacement, 0, sizeof(pcb_t));
     replacement.pid = current->pid;
     replacement.status = STATUS_CREATED;
-    replacement.ctx.cpsr = ctx->cpsr;
+    replacement.ctx.cpsr = current->ctx.cpsr;
     replacement.ctx.pc = address;
-    memcpy(replacement.ctx.gpr,ctx->gpr,sizeof(replacement.ctx.gpr));
-    replacement.ctx.sp = ctx->sp;
-    replacement.ctx.lr = ctx->lr;
-    replacement.priority = 50;
-    replacement.priority_change = current->priority_change;
+    memcpy(replacement.ctx.gpr,current->ctx.gpr,sizeof(replacement.ctx.gpr));
+    replacement.ctx.sp = current->ctx.sp;
+    replacement.ctx.lr = current->ctx.lr;
+    replacement.priority = current->priority * 3;
+    replacement.priority_change = current->priority_change * 3;
     pcb[replacement.pid] = replacement;
- //   dispatch(ctx,current,&replacement);
+    dispatch(ctx,current,&replacement);
     return;
 }
-int create_new_process(ctx_t* ctx){
+void create_new_process(ctx_t* ctx){
     pcb_t child;
     memset(&child, 0, sizeof(pcb_t));
     child.pid = getUniqueId();
@@ -141,8 +141,9 @@ int create_new_process(ctx_t* ctx){
     child.priority_change = current->priority_change;
     //put process in queue
     pcb[child.pid] = child;
-  //  dispatch(ctx,current,&child);
-    return 0;
+    current->child = &child;
+    dispatch(ctx,current,&child);
+    return;
 }
 
 
@@ -209,13 +210,14 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
         pcb[i].priority = 0;
     }
     memset(&console, 0, sizeof(pcb_t));
-    console.pid = 1;
+    console.pid = 0;
     console.status   = STATUS_CREATED;
     console.ctx.cpsr = 0x50;
     console.ctx.pc   = ( uint32_t )( &main_console );
     console.ctx.sp   = ( uint32_t )( &tos_console  );
     console.priority_change = 1;
     console.priority = 30;
+    console.child = NULL;
     pcb[0] = console;
 
     TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
@@ -229,8 +231,6 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     GICC0->CTLR         = 0x00000001; // enable GIC interface
     GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
-    //sort pcb in descending order of the priorities
-    //sort(pcb);
     int max = getMax();
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
@@ -269,6 +269,12 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         case 0x03 : { //fork call
             PL011_putc(UART0, 'F', true);
             create_new_process(ctx);
+            if(current->child == NULL){
+                ctx->gpr[0] = (uint32_t) 0;
+            }else{
+                ctx->gpr[0] = (uint32_t) current->child->pid;
+            //    ctx->gpr[0] = (uint32_t) 0;
+            }
             break;
         }
         case 0x04 : {  //exit call
