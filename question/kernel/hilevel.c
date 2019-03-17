@@ -7,6 +7,7 @@
 
 #include "hilevel.h"
 pcb_t pcb[ 4 ]; pcb_t* current = NULL;
+pcb_t* pcbPointer[4];
 pcb_t console;
 int length = sizeof(pcb) / sizeof(pcb[0]);
 
@@ -23,12 +24,12 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
     next_pid = '0' + next->pid;
   }
 
-    // PL011_putc( UART0, '[',      true );
-    // PL011_putc( UART0, prev_pid, true );
-    // PL011_putc( UART0, '-',      true );
-    // PL011_putc( UART0, '>',      true );
-    // PL011_putc( UART0, next_pid, true );
-    // PL011_putc( UART0, ']',      true );
+    PL011_putc( UART0, '[',      true );
+    PL011_putc( UART0, prev_pid, true );
+    PL011_putc( UART0, '-',      true );
+    PL011_putc( UART0, '>',      true );
+    PL011_putc( UART0, next_pid, true );
+    PL011_putc( UART0, ']',      true );
 
     current = next;                             // update   executing index   to P_{next}
 
@@ -84,6 +85,28 @@ int getMax(){
     }
     return max_index;
 }
+int getMaxPointer(){
+    int max_priority = -1;
+    int max_index = -1;
+    for( int i = 0; i < length; i++){
+        if(pcbPointer[i]->priority > max_priority && pcbPointer[i]->status != STATUS_TERMINATED){
+            max_priority = pcbPointer[i]->priority;
+            max_index = i;
+        }
+    }
+    return max_index;
+}
+void schedule_priority_pointer(ctx_t* ctx){
+    int max = getMaxPointer();
+    dispatch(ctx,current,pcbPointer[max]);
+    pcbPointer[max]->status = STATUS_EXECUTING;
+    for(int i = 0; i < length; i++){
+        if(pcbPointer[i] != NULL && pcbPointer[i]->status != STATUS_TERMINATED && i != max){
+            pcbPointer[i]->status = STATUS_READY;
+            pcbPointer[i]->priority += pcbPointer[i]->priority_change;
+        }
+    }
+}
 void schedule_priority(ctx_t* ctx){
     int max = getMax();
     dispatch(ctx, current, &pcb[max]);
@@ -111,6 +134,15 @@ int getUniqueId(){
     return -1;
 }
 
+int getUniqueIdPointer(){
+    for(int i = 0; i < length; i++){
+        if(pcbPointer[i] == NULL){
+            return i;
+        }
+    }
+    return -1;
+}
+
 void exec_program(ctx_t* ctx,uint32_t address){
     pcb_t replacement;
     memset(&replacement, 0, sizeof(pcb_t));
@@ -124,9 +156,46 @@ void exec_program(ctx_t* ctx,uint32_t address){
     replacement.priority = current->priority * 3;
     replacement.priority_change = current->priority_change * 3;
     pcb[replacement.pid] = replacement;
-    dispatch(ctx,current,&replacement);
+    //dispatch(ctx,current,&replacement);
     return;
 }
+void exec_program_pointer(ctx_t* ctx,uint32_t address){
+    pcb_t replacement;
+    memset(&replacement, 0, sizeof(pcb_t));
+    replacement.pid = current->pid;
+    replacement.status = STATUS_CREATED;
+    replacement.ctx.cpsr = current->ctx.cpsr;
+    replacement.ctx.pc = address;
+    replacement.priority = current->priority;
+    replacement.priority_change = current->priority_change;
+    memcpy(replacement.ctx.gpr,current->ctx.gpr,sizeof(replacement.ctx.gpr));
+    replacement.ctx.sp = current->ctx.sp;
+    replacement.ctx.lr = current->ctx.lr;
+    pcbPointer[replacement.pid] = &replacement;
+    return;
+}
+
+void create_new_process_pointer(ctx_t* ctx){
+    pcb_t child;
+    memset(&child, 0, sizeof(pcb_t));
+    child.pid = getUniqueIdPointer();
+    child.status = STATUS_CREATED;
+    child.ctx.cpsr = ctx->cpsr;
+    child.ctx.pc = ctx->pc;
+    child.priority = current->priority + 10;
+    child.priority_change = current->priority_change + 5;
+    child.child = NULL;
+    child.isChild = 1;
+    memcpy(child.ctx.gpr,ctx->gpr,sizeof(child.ctx.gpr));
+    child.ctx.sp = ctx->sp;
+    child.ctx.lr = ctx->lr;
+    //put process in queue
+    pcbPointer[child.pid] = &child;
+    current->child = &child;
+//    dispatch(ctx,current,&child);
+    return;
+}
+
 void create_new_process(ctx_t* ctx){
     pcb_t child;
     memset(&child, 0, sizeof(pcb_t));
@@ -138,11 +207,11 @@ void create_new_process(ctx_t* ctx){
     child.ctx.sp = current->ctx.sp;
     child.ctx.lr = current->ctx.lr;
     child.priority = current->priority;
-    child.priority_change = current->priority_change;
+    child.priority_change = current->priority_change * 10;
     //put process in queue
     pcb[child.pid] = child;
-    current->child = &child;
-    dispatch(ctx,current,&child);
+    //current->child = &child;
+//    dispatch(ctx,current,&child);
     return;
 }
 
@@ -209,6 +278,9 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
         pcb[i].status = STATUS_CREATED;
         pcb[i].priority = 0;
     }
+    for(int i = 0; i < length; i++){
+        pcbPointer[i] = NULL;
+    }
     memset(&console, 0, sizeof(pcb_t));
     console.pid = 0;
     console.status   = STATUS_CREATED;
@@ -218,7 +290,9 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     console.priority_change = 1;
     console.priority = 30;
     console.child = NULL;
+    console.isChild = 0;
     pcb[0] = console;
+    pcbPointer[0]= &console;
 
     TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
     TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
@@ -232,7 +306,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
     int max = getMax();
-    dispatch( ctx, NULL, &pcb[0] );
+    dispatch( ctx, NULL, pcbPointer[0] );
     int_enable_irq();
     return;
 }
@@ -245,7 +319,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
-    schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
+    schedule_priority_pointer(ctx); TIMER0->Timer1IntClr = 0x01;
   }
 
   // Step 5: write the interrupt identifier to signal we're done.
@@ -268,24 +342,30 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         }
         case 0x03 : { //fork call
             PL011_putc(UART0, 'F', true);
-            create_new_process(ctx);
-            if(current->child == NULL){
+            create_new_process_pointer(ctx);
+            // if(current->child == NULL){
+            //     ctx->gpr[0] = (uint32_t) 0;
+            // }else{
+            //     ctx->gpr[0] = (uint32_t) current->child->pid;
+            //    //ctx->gpr[0] = (uint32_t) 0;
+            // }
+            if(current->isChild == 1){
                 ctx->gpr[0] = (uint32_t) 0;
             }else{
                 ctx->gpr[0] = (uint32_t) current->child->pid;
-            //    ctx->gpr[0] = (uint32_t) 0;
+               //ctx->gpr[0] = (uint32_t) 0;
             }
             break;
         }
         case 0x04 : {  //exit call
             terminate_process();
-            schedule_priority(ctx);
+            schedule_priority_pointer(ctx);
             break;
         }
         case 0x05 : { //exec call
             PL011_putc(UART0, 'E', true);
             uint32_t address = (uint32_t)(ctx->gpr[0]);
-            exec_program(ctx,address);
+            exec_program_pointer(ctx,address);
             break;
         }
         case 0x06 : { //kill call
