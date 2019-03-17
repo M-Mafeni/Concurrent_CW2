@@ -232,7 +232,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     //sort pcb in descending order of the priorities
     //sort(pcb);
     int max = getMax();
-    dispatch( ctx, NULL, &console );
+    dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
     return;
 }
