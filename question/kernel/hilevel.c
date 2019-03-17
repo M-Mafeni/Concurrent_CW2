@@ -6,7 +6,7 @@
  */
 
 #include "hilevel.h"
-pcb_t pcb[ 10 ]; pcb_t* current = NULL;
+pcb_t pcb[ 4 ]; pcb_t* current = NULL;
 pcb_t console;
 int length = sizeof(pcb) / sizeof(pcb[0]);
 
