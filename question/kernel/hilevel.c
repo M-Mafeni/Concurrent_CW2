@@ -23,12 +23,12 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
     next_pid = '0' + next->pid;
   }
 
-//     PL011_putc( UART0, '[',      true );
-//     PL011_putc( UART0, prev_pid, true );
-//     PL011_putc( UART0, '-',      true );
-//     PL011_putc( UART0, '>',      true );
-//     PL011_putc( UART0, next_pid, true );
-//     PL011_putc( UART0, ']',      true );
+    PL011_putc( UART0, '[',      true );
+    PL011_putc( UART0, prev_pid, true );
+    PL011_putc( UART0, '-',      true );
+    PL011_putc( UART0, '>',      true );
+    PL011_putc( UART0, next_pid, true );
+    PL011_putc( UART0, ']',      true );
 
     current = next;                             // update   executing index   to P_{next}
 
@@ -86,17 +86,15 @@ int getMax(){
 }
 void schedule_priority(ctx_t* ctx){
     int max = getMax();
-    if(max != 0){
-        dispatch(ctx, current, &pcb[max]);
-        //figure out best way to reset value
-       //  pcb[max].priority = pcb[max].base_priority;
-        pcb[max].status = STATUS_EXECUTING;
-        //increase the priorities of all the blocks that weren't picked
-        for(int j =0; j< length; j++){
-            if(j != max && !is_terminated(pcb[j])){
-                pcb[j].status = STATUS_READY;
-                pcb[j].priority += pcb[j].priority_change;
-            }
+    dispatch(ctx, current, &pcb[max]);
+    //figure out best way to reset value
+   //  pcb[max].priority = pcb[max].base_priority;
+    pcb[max].status = STATUS_EXECUTING;
+    //increase the priorities of all the blocks that weren't picked
+    for(int j =0; j< length; j++){
+        if(j != max && !is_terminated(pcb[j])){
+            pcb[j].status = STATUS_READY;
+            pcb[j].priority += pcb[j].priority_change;
         }
     }
     return;
