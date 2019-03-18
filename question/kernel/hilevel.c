@@ -8,6 +8,9 @@
 #include "hilevel.h"
 pcb_t* current = NULL;
 pcb_t* pcb[4];
+pcb_t child;
+pcb_t console;
+pcb_t replacement;
 int length = sizeof(pcb) / sizeof(pcb[0]);
 
 //reset priority, add priorities
@@ -79,33 +82,31 @@ int getUniqueId(){
 }
 
 void exec_program(ctx_t* ctx,uint32_t address){
-    pcb_t replacement;
-    // memset(&replacement, 0, sizeof(pcb_t));
-    // replacement.pid = current->pid;
-    // replacement.status = STATUS_CREATED;
-    // replacement.ctx.cpsr = current->ctx.cpsr;
-    // replacement.ctx.pc = address;
-    // replacement.priority = current->priority;
-    // replacement.priority_change = current->priority_change;
-    // memcpy(replacement.ctx.gpr,current->ctx.gpr,sizeof(replacement.ctx.gpr));
-    // replacement.ctx.sp = current->ctx.sp;
-    // replacement.ctx.lr = current->ctx.lr;
-    // pcb[replacement.pid] = &replacement;
+    memset(&replacement, 0, sizeof(pcb_t));
+    replacement.pid = current->pid;
+    replacement.status = STATUS_CREATED;
+    replacement.ctx.cpsr = ctx->cpsr;
+    replacement.ctx.pc = address;
+    replacement.priority = current->priority;
+    replacement.priority_change = current->priority_change;
+    memcpy(replacement.ctx.gpr,ctx->gpr,sizeof(replacement.ctx.gpr));
+    replacement.ctx.sp = ctx->sp;
+    replacement.ctx.lr = ctx->lr;
+    pcb[replacement.pid] = &replacement;
     return;
 }
 
 void create_new_process(ctx_t* ctx){
-    pcb_t child;
     memset(&child, 0, sizeof(pcb_t));
     child.pid = getUniqueId();
     child.status = STATUS_CREATED;
-    child.ctx.cpsr = current->ctx.cpsr;
-    child.ctx.pc = current->ctx.pc;
+    child.ctx.cpsr = ctx->cpsr;
+    child.ctx.pc = ctx->pc;
     child.priority = current->priority;
     child.priority_change = current->priority_change;
-    memcpy(child.ctx.gpr,current->ctx.gpr,sizeof(child.ctx.gpr));
-    child.ctx.sp = current->ctx.sp;
-    child.ctx.lr = current->ctx.lr;
+    memcpy(child.ctx.gpr,ctx->gpr,sizeof(child.ctx.gpr));
+    child.ctx.sp = ctx->sp;
+    child.ctx.lr = ctx->lr;
     //put process in queue
     pcb[child.pid] = &child;
     //put in return values
@@ -131,7 +132,6 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     for(int i = 0; i < length; i++){
         pcb[i] = NULL;
     }
-    pcb_t console;
     memset(&console, 0, sizeof(pcb_t));
     console.pid = 0;
     console.status   = STATUS_CREATED;
