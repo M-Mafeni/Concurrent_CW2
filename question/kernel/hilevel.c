@@ -80,17 +80,17 @@ int getUniqueId(){
 
 void exec_program(ctx_t* ctx,uint32_t address){
     pcb_t replacement;
-    memset(&replacement, 0, sizeof(pcb_t));
-    replacement.pid = current->pid;
-    replacement.status = STATUS_CREATED;
-    replacement.ctx.cpsr = current->ctx.cpsr;
-    replacement.ctx.pc = address;
-    replacement.priority = current->priority;
-    replacement.priority_change = current->priority_change;
-    memcpy(replacement.ctx.gpr,current->ctx.gpr,sizeof(replacement.ctx.gpr));
-    replacement.ctx.sp = current->ctx.sp;
-    replacement.ctx.lr = current->ctx.lr;
-    pcb[replacement.pid] = &replacement;
+    // memset(&replacement, 0, sizeof(pcb_t));
+    // replacement.pid = current->pid;
+    // replacement.status = STATUS_CREATED;
+    // replacement.ctx.cpsr = current->ctx.cpsr;
+    // replacement.ctx.pc = address;
+    // replacement.priority = current->priority;
+    // replacement.priority_change = current->priority_change;
+    // memcpy(replacement.ctx.gpr,current->ctx.gpr,sizeof(replacement.ctx.gpr));
+    // replacement.ctx.sp = current->ctx.sp;
+    // replacement.ctx.lr = current->ctx.lr;
+    // pcb[replacement.pid] = &replacement;
     return;
 }
 
@@ -110,7 +110,7 @@ void create_new_process(ctx_t* ctx){
     pcb[child.pid] = &child;
     //put in return values
     child.ctx.gpr[0] = 0;
-    current->ctx.gpr[0] = child.pid;
+    ctx->gpr[0] = child.pid;
 //    dispatch(ctx,current,&child);
     return;
 }
