@@ -108,14 +108,11 @@ void create_new_process(ctx_t* ctx){
     child.ctx.pc = current->ctx.pc;
     child.priority = current->priority;
     child.priority_change = current->priority_change;
-    child.child = NULL;
-    child.isChild = 1;
     memcpy(child.ctx.gpr,current->ctx.gpr,sizeof(child.ctx.gpr));
     child.ctx.sp = current->ctx.sp;
     child.ctx.lr = current->ctx.lr;
     //put process in queue
     pcb[child.pid] = &child;
-    current->child = &child;
 //    dispatch(ctx,current,&child);
     return;
 }
@@ -144,8 +141,6 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     console.ctx.sp   = ( uint32_t )( &tos_console  );
     console.priority_change = 1;
     console.priority = 30;
-    console.child = NULL;
-    console.isChild = 0;
     pcb[0]= &console;
 
     TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
@@ -197,18 +192,6 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         case 0x03 : { //fork call
             PL011_putc(UART0, 'F', true);
             create_new_process(ctx);
-            // if(current->child == NULL){
-            //     ctx->gpr[0] = (uint32_t) 0;
-            // }else{
-            //     ctx->gpr[0] = (uint32_t) current->child->pid;
-            //    //ctx->gpr[0] = (uint32_t) 0;
-            // }
-            if(current->isChild == 1){
-                ctx->gpr[0] = (uint32_t) 0;
-            }else{
-                ctx->gpr[0] = (uint32_t) current->child->pid;
-               //ctx->gpr[0] = (uint32_t) 0;
-            }
             break;
         }
         case 0x04 : {  //exit call

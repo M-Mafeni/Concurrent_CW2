@@ -50,8 +50,6 @@ typedef struct  pcb_t{
      ctx_t    ctx;
      int priority;
      int priority_change;
-     struct pcb_t* child;
-     int isChild;
 } pcb_t;
 
 #endif
