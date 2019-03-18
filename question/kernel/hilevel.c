@@ -8,7 +8,6 @@
 #include "hilevel.h"
 pcb_t* current = NULL;
 pcb_t* pcb[4];
-pcb_t console;
 int length = sizeof(pcb) / sizeof(pcb[0]);
 
 //reset priority, add priorities
@@ -68,10 +67,6 @@ void schedule_priority(ctx_t* ctx){
         }
     }
     return;
-}
-
-void invoke_console(ctx_t* ctx){
-    dispatch(ctx,&console,&console);
 }
 
 int getUniqueId(){
@@ -136,6 +131,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     for(int i = 0; i < length; i++){
         pcb[i] = NULL;
     }
+    pcb_t console;
     memset(&console, 0, sizeof(pcb_t));
     console.pid = 0;
     console.status   = STATUS_CREATED;
