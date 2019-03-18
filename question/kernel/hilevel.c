@@ -113,6 +113,9 @@ void create_new_process(ctx_t* ctx){
     child.ctx.lr = current->ctx.lr;
     //put process in queue
     pcb[child.pid] = &child;
+    //put in return values
+    child.ctx.gpr[0] = 0;
+    current->ctx.gpr[0] = child.pid;
 //    dispatch(ctx,current,&child);
     return;
 }
