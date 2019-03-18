@@ -7,10 +7,7 @@
 
 #include "hilevel.h"
 pcb_t* current = NULL;
-pcb_t* pcb[4];
-pcb_t child;
-pcb_t console;
-pcb_t replacement;
+pcb_t pcb[4];
 int length = sizeof(pcb) / sizeof(pcb[0]);
 
 //reset priority, add priorities
@@ -52,8 +49,8 @@ int getMax(){
     int max_priority = -1;
     int max_index = -1;
     for( int i = 0; i < length; i++){
-        if(pcb[i]->priority > max_priority && pcb[i]->status != STATUS_TERMINATED){
-            max_priority = pcb[i]->priority;
+        if(pcb[i].priority > max_priority && pcb[i].status != STATUS_TERMINATED){
+            max_priority = pcb[i].priority;
             max_index = i;
         }
     }
@@ -61,12 +58,12 @@ int getMax(){
 }
 void schedule_priority(ctx_t* ctx){
     int max = getMax();
-    dispatch(ctx,current,pcb[max]);
-    pcb[max]->status = STATUS_EXECUTING;
+    dispatch(ctx,current,&pcb[max]);
+    pcb[max].status = STATUS_EXECUTING;
     for(int i = 0; i < length; i++){
-        if(pcb[i] != NULL && pcb[i]->status != STATUS_TERMINATED && i != max){
-            pcb[i]->status = STATUS_READY;
-            pcb[i]->priority += pcb[i]->priority_change;
+        if(pcb[i].pid != -1 && pcb[i].status != STATUS_TERMINATED && i != max){
+            pcb[i].status = STATUS_READY;
+            pcb[i].priority += pcb[i].priority_change;
         }
     }
     return;
@@ -74,7 +71,7 @@ void schedule_priority(ctx_t* ctx){
 
 int getUniqueId(){
     for(int i = 0; i < length; i++){
-        if(pcb[i] == NULL){
+        if(pcb[i].pid == -1 || is_terminated(pcb[i])){
             return i;
         }
     }
@@ -82,24 +79,28 @@ int getUniqueId(){
 }
 
 void exec_program(ctx_t* ctx,uint32_t address){
-    memset(&replacement, 0, sizeof(pcb_t));
-    replacement.pid = current->pid;
-    replacement.status = STATUS_CREATED;
-    replacement.ctx.cpsr = ctx->cpsr;
-    replacement.ctx.pc = address;
-    replacement.priority = current->priority;
-    replacement.priority_change = current->priority_change;
-    memcpy(replacement.ctx.gpr,ctx->gpr,sizeof(replacement.ctx.gpr));
-    replacement.ctx.sp = ctx->sp;
-    replacement.ctx.lr = ctx->lr;
-    pcb[replacement.pid] = &replacement;
+    ctx->pc = address;
+    dispatch(ctx,current,current);
+    // pcb_t replacement;
+    // memset(&replacement, 0, sizeof(pcb_t));
+    // replacement.pid = current->pid;
+    // replacement.status = STATUS_CREATED;
+    // replacement.ctx.cpsr = current->ctx.cpsr;
+    // replacement.ctx.pc = address;
+    // replacement.ctx.sp = current->ctx.sp;
+    // replacement.ctx.lr = current->ctx.lr;
+    // replacement.priority = current->priority;
+    // replacement.priority_change = current->priority_change;
+    // memcpy(replacement.ctx.gpr,current->ctx.gpr,sizeof(replacement.ctx.gpr));
+    // pcb[replacement.pid] = replacement;
     return;
 }
 
 void create_new_process(ctx_t* ctx){
+    pcb_t child;
     memset(&child, 0, sizeof(pcb_t));
     child.pid = getUniqueId();
-    child.status = STATUS_CREATED;
+    child.status = current->status;
     child.ctx.cpsr = ctx->cpsr;
     child.ctx.pc = ctx->pc;
     child.priority = current->priority;
@@ -108,7 +109,7 @@ void create_new_process(ctx_t* ctx){
     child.ctx.sp = ctx->sp;
     child.ctx.lr = ctx->lr;
     //put process in queue
-    pcb[child.pid] = &child;
+    pcb[child.pid] = child;
     //put in return values
     child.ctx.gpr[0] = 0;
     ctx->gpr[0] = child.pid;
@@ -130,8 +131,9 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     PL011_putc(UART0,'R',true);
     //initialise process block with every process having id -1
     for(int i = 0; i < length; i++){
-        pcb[i] = NULL;
+        pcb[i].pid = -1;
     }
+    pcb_t console;
     memset(&console, 0, sizeof(pcb_t));
     console.pid = 0;
     console.status   = STATUS_CREATED;
@@ -140,7 +142,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     console.ctx.sp   = ( uint32_t )( &tos_console  );
     console.priority_change = 1;
     console.priority = 30;
-    pcb[0]= &console;
+    pcb[0]= console;
 
     TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
     TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
@@ -154,7 +156,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
     int max = getMax();
-    dispatch( ctx, NULL, pcb[0] );
+    dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
     return;
 }
