@@ -103,7 +103,6 @@ void create_new_process(ctx_t* ctx){
             topOfStack = topOfNewProcess;
         }
         uint32_t offset = ctx->sp - current->ctx.sp;
-        // memcpy((topOfNewProcess - offset),(((uint32_t) ctx->sp ) - offset),offset);
         child.ctx.sp = topOfNewProcess - offset;
         topOfStack = topOfNewProcess;
         child.ctx.lr = ctx->lr;
@@ -119,20 +118,7 @@ void create_new_process(ctx_t* ctx){
 void exec_program(ctx_t* ctx,uint32_t address){
     int id = current->pid;
     ctx->pc = address;
-//    ctx->sp = topOfProcesses[id];
     dispatch(ctx,current,current);
-    // pcb_t replacement;
-    // memset(&replacement, 0, sizeof(pcb_t));
-    // replacement.pid = current->pid;
-    // replacement.status = STATUS_CREATED;
-    // replacement.ctx.cpsr = current->ctx.cpsr;
-    // replacement.ctx.pc = address;
-    // replacement.ctx.sp = current->ctx.sp;
-    // replacement.ctx.lr = current->ctx.lr;
-    // replacement.priority = current->priority;
-    // replacement.priority_change = current->priority_change;
-    // memcpy(replacement.ctx.gpr,current->ctx.gpr,sizeof(replacement.ctx.gpr));
-    // pcb[replacement.pid] = replacement;
     return;
 }
 void kill_process(int id) {
@@ -224,8 +210,8 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             break;
         }
         case 0x04 : {  //exit call
+            PL011_putc(UART0,'Q',true);
             current->status = STATUS_TERMINATED;
-            schedule_priority(ctx);
             break;
         }
         case 0x05 : { //exec call

@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [30] hours
+effort : [31] hours
 
 -------------------------------------------------------------------------------
 
@@ -48,7 +48,7 @@ are not (necessarily) detailed explicitly.
 [X]           - priority-based scheduler                             ( 10%)
 
     Stage 2 : closed generalisations and enhancements
-[?]           - fork, exec and exit system calls                     ( 15%)
+[X]           - fork, exec and exit system calls                     ( 15%)
 [?]           - Inter-Process Communication (IPC)                    ( 15%)
 
     Stage 3 : open   generalisations and enhancements                ( 30%)
