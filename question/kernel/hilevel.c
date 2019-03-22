@@ -101,6 +101,7 @@ void create_new_process(ctx_t* ctx){
         if(topOfNewProcess == 0){
             topOfNewProcess = topOfStack + 0x00001000;
             topOfStack = topOfNewProcess;
+            topOfProcesses[id] = topOfStack;
         }
         uint32_t offset = ctx->sp - current->ctx.sp;
         child.ctx.sp = topOfNewProcess - offset;
@@ -212,6 +213,7 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         case 0x04 : {  //exit call
             PL011_putc(UART0,'Q',true);
             current->status = STATUS_TERMINATED;
+            schedule_priority(ctx);
             break;
         }
         case 0x05 : { //exec call
