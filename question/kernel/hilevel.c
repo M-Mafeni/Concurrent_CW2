@@ -7,7 +7,7 @@
 
 #include "hilevel.h"
 pcb_t* current = NULL;
-pcb_t pcb[10];
+pcb_t pcb[50];
 /*array stores the stack pointers for the processes for
 better memory allocation*/
 uint32_t topOfProcesses[10];
