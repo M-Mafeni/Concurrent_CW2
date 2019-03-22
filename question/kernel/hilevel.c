@@ -7,8 +7,12 @@
 
 #include "hilevel.h"
 pcb_t* current = NULL;
-pcb_t pcb[4];
+pcb_t pcb[10];
+/*array stores the stack pointers for the processes for
+better memory allocation*/
+uint32_t topOfProcesses[10];
 int length = sizeof(pcb) / sizeof(pcb[0]);
+uint32_t topOfStack;
 
 //reset priority, add priorities
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
@@ -76,30 +80,46 @@ int getUniqueId(){
     return -1;
 }
 
-
+extern void     main_console();
+extern uint32_t tos_console;
 
 void create_new_process(ctx_t* ctx){
-    pcb_t child;
-    memset(&child, 0, sizeof(pcb_t));
-    child.pid = getUniqueId();
-    child.status = current->status;
-    child.ctx.cpsr = ctx->cpsr;
-    child.ctx.pc = ctx->pc;
-    child.priority = current->priority;
-    child.priority_change = current->priority_change;
-    memcpy(child.ctx.gpr,ctx->gpr,sizeof(child.ctx.gpr));
-    child.ctx.sp = ctx->sp;
-    child.ctx.lr = ctx->lr;
-    //put process in queue
-    pcb[child.pid] = child;
-    //put in return values
-    child.ctx.gpr[0] = 0;
-    ctx->gpr[0] = child.pid;
+    int id = getUniqueId();
+    if(id == -1){
+        ctx->gpr[0] = -1;
+    }else{
+        pcb_t child;
+        memset(&child, 0, sizeof(pcb_t));
+        child.pid = id;
+        child.status = current->status;
+        child.ctx.cpsr = ctx->cpsr;
+        child.ctx.pc = ctx->pc;
+        child.priority = current->priority;
+        child.priority_change = current->priority_change;
+        memcpy(child.ctx.gpr,ctx->gpr,sizeof(child.ctx.gpr));
+        uint32_t topOfNewProcess = topOfProcesses[id];
+        if(topOfNewProcess == 0){
+            topOfNewProcess = topOfStack + 0x00001000;
+            topOfStack = topOfNewProcess;
+        }
+        uint32_t offset = ctx->sp - current->ctx.sp;
+        // memcpy((topOfNewProcess - offset),(((uint32_t) ctx->sp ) - offset),offset);
+        child.ctx.sp = topOfNewProcess - offset;
+        topOfStack = topOfNewProcess;
+        child.ctx.lr = ctx->lr;
+        //put process in queue
+        pcb[child.pid] = child;
+        //put in return values
+        child.ctx.gpr[0] = 0;
+        ctx->gpr[0] = child.pid;
+    }
 //    dispatch(ctx,current,&child);
     return;
 }
 void exec_program(ctx_t* ctx,uint32_t address){
+    int id = current->pid;
     ctx->pc = address;
+//    ctx->sp = topOfProcesses[id];
     dispatch(ctx,current,current);
     // pcb_t replacement;
     // memset(&replacement, 0, sizeof(pcb_t));
@@ -119,8 +139,7 @@ void kill_process(int id) {
     pcb[id].status = STATUS_TERMINATED;
 }
 
-extern void     main_console();
-extern uint32_t tos_console;
+
 
 void hilevel_handler_rst( ctx_t* ctx              ) {
     /* Initialises PCBs, representing user processes stemming from execution
@@ -134,6 +153,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     //initialise process block with every process having id -1
     for(int i = 0; i < length; i++){
         pcb[i].pid = -1;
+        topOfProcesses[i] = 0;
     }
     pcb_t console;
     memset(&console, 0, sizeof(pcb_t));
@@ -145,6 +165,8 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     console.priority_change = 1;
     console.priority = 30;
     pcb[0]= console;
+    topOfStack = console.ctx.sp;
+    topOfProcesses[0] = console.ctx.sp;
 
     TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
     TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
@@ -182,6 +204,10 @@ void hilevel_handler_irq(ctx_t* ctx) {
 
 void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
     switch(id){
+        case 0x00: { //yield call
+            schedule_priority(ctx);
+            break;
+        }
         case 0x01 : {  //write call => write(fd,*x,n)
             int   fd = ( int   )( ctx->gpr[ 0 ] );
             char*  x = ( char* )( ctx->gpr[ 1 ] );
