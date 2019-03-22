@@ -10,5 +10,13 @@
 #include "PL011.h"
 
 #include "libc.h"
+typedef enum{
+    EATING,
+    THINKING,
+} state;
+
+typedef struct philosopher{
+    state state;
+}philosopher;
 
 #endif

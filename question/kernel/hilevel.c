@@ -10,7 +10,7 @@ pcb_t* current = NULL;
 pcb_t pcb[50];
 /*array stores the stack pointers for the processes for
 better memory allocation*/
-uint32_t topOfProcesses[10];
+uint32_t topOfProcesses[50];
 int length = sizeof(pcb) / sizeof(pcb[0]);
 uint32_t topOfStack;
 
@@ -100,12 +100,11 @@ void create_new_process(ctx_t* ctx){
         uint32_t topOfNewProcess = topOfProcesses[id];
         if(topOfNewProcess == 0){
             topOfNewProcess = topOfStack + 0x00001000;
-            topOfStack = topOfNewProcess;
-            topOfProcesses[id] = topOfStack;
         }
+        topOfStack = topOfNewProcess;
+        topOfProcesses[id] = topOfStack;
         uint32_t offset = ctx->sp - current->ctx.sp;
         child.ctx.sp = topOfNewProcess - offset;
-        topOfStack = topOfNewProcess;
         child.ctx.lr = ctx->lr;
         //put process in queue
         pcb[child.pid] = child;
@@ -113,11 +112,9 @@ void create_new_process(ctx_t* ctx){
         child.ctx.gpr[0] = 0;
         ctx->gpr[0] = child.pid;
     }
-//    dispatch(ctx,current,&child);
     return;
 }
 void exec_program(ctx_t* ctx,uint32_t address){
-    int id = current->pid;
     ctx->pc = address;
     dispatch(ctx,current,current);
     return;
