@@ -259,20 +259,25 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             break;
         }
         case 0x08 : { //create new pipe
+            PL011_putc(UART0,'P',true);
             int* fd = (int*) ctx->gpr[0];
-            pipes[activePipes].sourceId = (uint32_t)*fd;
-            pipes[activePipes].destId   = (uint32_t)*(fd + 1);
-            pipes[activePipes].data     = (void*) ctx->gpr[1];
+            pipes[activePipes].sourceId = (uint32_t)fd;
+            pipes[activePipes].destId   = (uint32_t)(fd + 1);
+            pipes[activePipes].data     = NULL;
             break;
         }
         case 0x09:{ //send from source
+            PL011_putc(UART0,'S',true);
             uint32_t sourceId = (uint32_t) (ctx->gpr[0]);
             void* data        = (void*) (ctx->gpr[1]);
             place_on_pipe(sourceId,data);
             
         }
         case 0x10:{ //receive from dest
+            PL011_putc(UART0,'R',true);
+            PL011_putc(UART0,'E',true);
             uint32_t destId = (uint32_t) (ctx->gpr[0]);
+            receive_from_pipe(ctx,destId);
         }
         default : { //case 0x0?
             break;
