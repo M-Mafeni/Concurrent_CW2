@@ -81,6 +81,6 @@ extern void nice( pid_t pid, int x );
 
 extern void pipe(const void *fd);
 extern void send(const void *sourceId, void *data);
-extern void *receive(const void *destId,void *data);
+extern void *receive(const void *destId);
 
 #endif

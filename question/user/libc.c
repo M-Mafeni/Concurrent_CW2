@@ -167,14 +167,13 @@ void send(const void *sourceId, void *data){
                   : "r0", "r1");
     return;
 }
-void *receive(const void *destId,void *data){
+void *receive(const void *destId){
     void *r;
     asm volatile("mov r0, %2 \n"
-                 "mov r1, %3 \n"
                   "svc %1    \n"
                   "mov %0, r0 \n" // assign r0 =    r
                   : "=r" (r)
-                  : "I" (SYS_RECEIVE), "r" (destId), "r" (data)
-                  : "r0","r1");
+                  : "I" (SYS_RECEIVE), "r" (destId)
+                  : "r0");
     return r;
 }
