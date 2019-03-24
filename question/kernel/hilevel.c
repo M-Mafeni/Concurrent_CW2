@@ -107,6 +107,8 @@ void create_new_process(ctx_t* ctx){
         topOfStack = topOfNewProcess;
         topOfProcesses[id] = topOfStack;
         uint32_t offset = ctx->sp - current->ctx.sp;
+        //problem with retaining local variables
+        memcpy((void*)(topOfProcesses[id]- offset),(void*)(topOfProcesses[current->pid] - offset ),offset);
         child.ctx.sp = topOfNewProcess - offset;
         child.ctx.lr = ctx->lr;
         //put in return values
@@ -145,7 +147,7 @@ void receive_from_pipe(ctx_t* ctx,uint32_t destId){
                 
             }
             void* data = pipes[i].data;
-            ctx->gpr[0] = (uint32_t)data;
+            ctx->gpr[0] = (uint32_t) data;
             break;
         }
     }
@@ -261,8 +263,8 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         case 0x08 : { //create new pipe
             PL011_putc(UART0,'P',true);
             int* fd = (int*) ctx->gpr[0];
-            pipes[activePipes].sourceId = (uint32_t)fd;
-            pipes[activePipes].destId   = (uint32_t)(fd + 1);
+            pipes[activePipes].sourceId = (uint32_t)*fd;
+            pipes[activePipes].destId   = (uint32_t)*(fd + 1);
             pipes[activePipes].data     = NULL;
             break;
         }
@@ -271,13 +273,14 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             uint32_t sourceId = (uint32_t) (ctx->gpr[0]);
             void* data        = (void*) (ctx->gpr[1]);
             place_on_pipe(sourceId,data);
-            
+            break;
         }
         case 0x10:{ //receive from dest
             PL011_putc(UART0,'R',true);
             PL011_putc(UART0,'E',true);
             uint32_t destId = (uint32_t) (ctx->gpr[0]);
             receive_from_pipe(ctx,destId);
+            break;
         }
         default : { //case 0x0?
             break;

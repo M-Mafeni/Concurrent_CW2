@@ -148,7 +148,7 @@ void nice( int pid, int x ) {
   return;
 }
 
-void pipe(const void *fd){
+void pipe(const int *fd){
     int r;
     asm volatile( "mov r0, %1 \n" //r0 = fd
                   "svc %0     \n "
@@ -158,7 +158,7 @@ void pipe(const void *fd){
     return;
 }
 
-void send(const void *sourceId, void *data){
+void send(const int sourceId, void *data){
     asm volatile( "mov r0, %1 \n" //r0 = sourceId
                   "mov r1, %2 \n" //r1 = data
                   "svc %0     \n"
@@ -167,7 +167,7 @@ void send(const void *sourceId, void *data){
                   : "r0", "r1");
     return;
 }
-void *receive(const void *destId){
+void *receive(const int destId){
     void *r;
     asm volatile("mov r0, %2 \n"
                   "svc %1    \n"
