@@ -109,11 +109,12 @@ void create_new_process(ctx_t* ctx){
         uint32_t offset = ctx->sp - current->ctx.sp;
         child.ctx.sp = topOfNewProcess - offset;
         child.ctx.lr = ctx->lr;
-        //put process in queue
-        pcb[child.pid] = child;
         //put in return values
         child.ctx.gpr[0] = 0;
         ctx->gpr[0] = child.pid;
+        //put process in queue
+        pcb[child.pid] = child;
+  
     }
     return;
 }

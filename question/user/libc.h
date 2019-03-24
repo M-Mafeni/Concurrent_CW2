@@ -40,8 +40,8 @@ typedef int pid_t;
 #define SYS_NICE      ( 0x07 )
 //Message passing system calls
 #define CREATE_PIPE   ( 0x08 )
-#define SYS_SEND      ( 0x08 )
-#define SYS_RECEIVE   ( 0x09 )
+#define SYS_SEND      ( 0x09 )
+#define SYS_RECEIVE   ( 0x10 )
 
 
 #define SIG_TERM      ( 0x00 )
@@ -79,8 +79,8 @@ extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to x
 extern void nice( pid_t pid, int x );
 
-extern void pipe(const void *fd);
-extern void send(const void *sourceId, void *data);
-extern void *receive(const void *destId);
+extern void pipe(const int *fd);
+extern void send(const int *sourceId, void *data);
+extern void *receive(const int *destId);
 
 #endif
