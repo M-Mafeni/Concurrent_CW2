@@ -2,6 +2,9 @@
 
 void main_philosopher(){
     int childCount = 0;
+    //2 pipes
+    int parentToChild[2];
+    int childToParent[2];
     int a = fork();
     int b = fork();
     int c = fork();
@@ -11,7 +14,7 @@ void main_philosopher(){
     char digits[2];
     sem_t sem;
     //States = THINKING, EATING,
-    //chopsticks is fixed point in memory
+    //chopsticks is fixed point in memory (mutexes)
     //have semaphore value here
     const int chopsticks[16];
     // Thinking is sem_wait
@@ -22,6 +25,7 @@ void main_philosopher(){
         }
     }
     /*
+    
     while(true){
     process waits
 }

@@ -52,4 +52,10 @@ typedef struct  pcb_t{
      int priority_change;
 } pcb_t;
 
+//pipe struct to be used between processes
+typedef struct pipe{
+    pcb_t source;
+    pcb_t dest;
+    void *data;
+}
 #endif

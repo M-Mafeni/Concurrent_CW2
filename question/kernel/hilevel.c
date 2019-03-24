@@ -82,6 +82,7 @@ int getUniqueId(){
 
 extern void     main_console();
 extern uint32_t tos_console;
+extern uint32_t tos_SharedMem;
 
 void create_new_process(ctx_t* ctx){
     int id = getUniqueId();

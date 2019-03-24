@@ -22,6 +22,9 @@ SECTIONS {
   /* allocate stack for svc mode     */
   .       = . + 0x00001000;
   tos_svc = .;
+  /* allocate stack for shared memory */
+  .       = . + 0x00001000;
+  tos_SharedMem = .;
   /*allocate stack for console           */
   .       = . + 0x00001000;
   tos_console  = .;
