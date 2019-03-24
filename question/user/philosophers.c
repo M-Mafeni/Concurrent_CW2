@@ -12,7 +12,6 @@ void main_philosopher(){
     philosopher philosophers[16];
     int test[4] = {a,b,c,d};
     char digits[2];
-    sem_t sem;
     //States = THINKING, EATING,
     //chopsticks is fixed point in memory (mutexes)
     //have semaphore value here
@@ -25,7 +24,7 @@ void main_philosopher(){
         }
     }
     /*
-    
+
     while(true){
     process waits
 }

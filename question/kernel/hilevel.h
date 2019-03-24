@@ -54,8 +54,8 @@ typedef struct  pcb_t{
 
 //pipe struct to be used between processes
 typedef struct pipe{
-    pcb_t source;
-    pcb_t dest;
+    uint32_t sourceId;
+    uint32_t destId;
     void *data;
-}
+} pipe;
 #endif

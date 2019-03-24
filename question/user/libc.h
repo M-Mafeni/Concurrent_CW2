@@ -38,11 +38,11 @@ typedef int pid_t;
 #define SYS_EXEC      ( 0x05 )
 #define SYS_KILL      ( 0x06 )
 #define SYS_NICE      ( 0x07 )
-//Semaphore system calls
-#define SEM_INIT      ( 0x08 )
-#define SEM_WAIT      ( 0x09 )
-#define SEM_POST      ( 0x10 )
-#define SEM_DESTROY   ( 0x0A )
+//Message passing system calls
+#define CREATE_PIPE   ( 0x08 )
+#define SYS_SEND      ( 0x08 )
+#define SYS_RECEIVE   ( 0x09 )
+
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -79,12 +79,8 @@ extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to x
 extern void nice( pid_t pid, int x );
 
-extern int sem_init();
-
-extern void sem_wait();
-
-extern void sem_post();
-
-extern void sem_destroy();
+extern void pipe(const void *fd);
+extern void send(const void *sourceId, void *data);
+extern void *receive(const void *destId,void *data);
 
 #endif

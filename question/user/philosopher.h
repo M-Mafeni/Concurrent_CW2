@@ -16,11 +16,11 @@ typedef enum{
 typedef enum{
     DIRTY,
     CLEAN
-} fork;
+} chopstick;
 typedef struct philosopher{
-    state state,
-    bool hasLeftFork,
-    bool hasRightFork
+    state state;
+    bool hasLeftFork;
+    bool hasRightFork;
 } philosopher;
 //place fork array in shared memory address
 /*
