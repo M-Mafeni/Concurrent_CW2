@@ -11,7 +11,9 @@ pcb_t pcb[50];
 /*array stores the stack pointers for the processes for
 better memory allocation*/
 uint32_t topOfProcesses[50];
+pipe pipes[16];
 int length = sizeof(pcb) / sizeof(pcb[0]);
+int activePipes = 0;
 uint32_t topOfStack;
 
 //reset priority, add priorities
@@ -123,6 +125,30 @@ void exec_program(ctx_t* ctx,uint32_t address){
 void kill_process(int id) {
     pcb[id].status = STATUS_TERMINATED;
 }
+void place_on_pipe(uint32_t sourceId,void* data){
+    for(int i = 0; i < 16; i++){
+        if(pipes[i].sourceId == sourceId){
+            while(pipes[i].data != NULL){
+            }
+            pipes[i].data = data;
+            break;
+        }
+    }
+    return;
+}
+
+void receive_from_pipe(ctx_t* ctx,uint32_t destId){
+    for(int i = 0; i < 16; i++){
+        if(pipes[i].destId == destId){
+            while(pipes[i].data == NULL){
+                
+            }
+            void* data = pipes[i].data;
+            ctx->gpr[0] = (uint32_t)data;
+            break;
+        }
+    }
+}
 
 
 
@@ -139,6 +165,11 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     for(int i = 0; i < length; i++){
         pcb[i].pid = -1;
         topOfProcesses[i] = 0;
+        if(i < 16){
+            //set default pipe values
+            memset(&pipes[i],0,sizeof(pipes));
+            pipes[i].data = NULL;
+        }
     }
     pcb_t console;
     memset(&console, 0, sizeof(pcb_t));
@@ -225,6 +256,22 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             int id = (int)(ctx->gpr[0]);
             kill_process(id);
             break;
+        }
+        case 0x08 : { //create new pipe
+            int* fd = (int*) ctx->gpr[0];
+            pipes[activePipes].sourceId = (uint32_t)*fd;
+            pipes[activePipes].destId   = (uint32_t)*(fd + 1);
+            pipes[activePipes].data     = (void*) ctx->gpr[1];
+            break;
+        }
+        case 0x09:{ //send from source
+            uint32_t sourceId = (uint32_t) (ctx->gpr[0]);
+            void* data        = (void*) (ctx->gpr[1]);
+            place_on_pipe(sourceId,data);
+            
+        }
+        case 0x10:{ //receive from dest
+            uint32_t destId = (uint32_t) (ctx->gpr[0]);
         }
         default : { //case 0x0?
             break;
