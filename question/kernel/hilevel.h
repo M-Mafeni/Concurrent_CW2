@@ -54,8 +54,11 @@ typedef struct  pcb_t{
 
 //pipe struct to be used between processes
 typedef struct pipe{
+    pid_t processId; //process that created the pipe
     uint32_t sourceId;
     uint32_t destId;
+    bool waitingToSend;
+    bool waitingToReceive;
     void *data;
 } pipe;
 #endif

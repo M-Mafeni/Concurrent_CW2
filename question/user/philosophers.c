@@ -1,37 +1,22 @@
 #include "philosopher.h"
-
+extern uint32_t tos_SharedMem;
+extern uint32_t tos_SharedMem1;
 void main_philosopher(){
-    int childCount = 0;
-    //2 pipes
-    int parentToChild[2];
-    int childToParent[2];
-    int a = fork();
-    int b = fork();
-    int c = fork();
-    int d = fork();
-    philosopher philosophers[16];
-    int test[4] = {a,b,c,d};
-    char digits[2];
-    //States = THINKING, EATING,
-    //chopsticks is fixed point in memory (mutexes)
-    //have semaphore value here
-    const int chopsticks[16];
-    // Thinking is sem_wait
-    // Eating is sem_post
-    for(int i = 0; i < 4; i++){
-        if(test[i] != 0){
-            childCount++;
-        }
+    //channels to be used for IPC
+    int channelsTo[16][2]; //e.g philosopher 0 -> 1
+    int channelsFrom[16][2]; //e.g philosopher 1 -> 0
+    for(int i= 0; i < 16; i++){
+        //channelsFrom[i][0] = send;
+        //channelsFrom[i][1] = receive;
+        channelsTo[i][0] = i;
+        channelsTo[i][1] = (i+1) %16;
+        pipe(channelsTo[i]);
+        channelsFrom[i][0] = (i+1) %16;
+        channelsFrom[i][1] = i;
+        pipe(channelsFrom[i]);
     }
-    /*
-
-    while(true){
-    process waits
-}
-
-    */
-    itoa(digits,childCount);
-    write(STDOUT_FILENO,digits,2);
-
+    memcpy(&tos_SharedMem,channelsTo,sizeof(channelsTo) *sizeof(channelsTo[0]));
+    memcpy(&tos_SharedMem1,channelsFrom,sizeof(channelsFrom) *sizeof(channelsFrom[0]));
+    
     exit(EXIT_SUCCESS);
 }

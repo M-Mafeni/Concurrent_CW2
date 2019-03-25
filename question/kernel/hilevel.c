@@ -4,14 +4,14 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
-
+#define No_of_pipes 40
 #include "hilevel.h"
 pcb_t* current = NULL;
 pcb_t pcb[50];
 /*array stores the stack pointers for the processes for
 better memory allocation*/
 uint32_t topOfProcesses[50];
-pipe pipes[16];
+pipe pipes[No_of_pipes];
 int length = sizeof(pcb) / sizeof(pcb[0]);
 int activePipes = 0;
 uint32_t topOfStack;
@@ -53,7 +53,7 @@ int getMax(){
     int max_priority = -1;
     int max_index = -1;
     for( int i = 0; i < length; i++){
-        if(pcb[i].priority > max_priority && pcb[i].status != STATUS_TERMINATED){
+        if(pcb[i].priority > max_priority && !(pcb[i].status == STATUS_TERMINATED || pcb[i].status == STATUS_WAITING)){
             max_priority = pcb[i].priority;
             max_index = i;
         }
@@ -128,27 +128,39 @@ void exec_program(ctx_t* ctx,uint32_t address){
 void kill_process(int id) {
     pcb[id].status = STATUS_TERMINATED;
 }
-void place_on_pipe(uint32_t sourceId,void* data){
-    for(int i = 0; i < 16; i++){
+void place_on_pipe(ctx_t* ctx,uint32_t sourceId,void* data){
+    for(int i = 0; i < No_of_pipes; i++){
         if(pipes[i].sourceId == sourceId){
-            while(pipes[i].data != NULL){
+            if(pipes[i].data == NULL){
+                pipes[i].data = data;
+                break;
+            }else{
+                current->status = STATUS_WAITING;
+                pipes[i].waitingToSend = true;
+                dispatch(ctx,current,current);
+                schedule_priority(ctx);
+                break;
             }
-            pipes[i].data = data;
-            break;
         }
     }
     return;
 }
 
 void receive_from_pipe(ctx_t* ctx,uint32_t destId){
-    for(int i = 0; i < 16; i++){
+    for(int i = 0; i < No_of_pipes; i++){
         if(pipes[i].destId == destId){
-            while(pipes[i].data == NULL){
-                
+            if(pipes[i].data != NULL){
+                void* data = pipes[i].data;
+                ctx->gpr[0] = (uint32_t) data;
+                pipes[i].data = NULL;
+                break;
+            }else{
+                current->status = STATUS_WAITING;
+                pipes[i].waitingToReceive = true;
+                dispatch(ctx,current,current);
+                schedule_priority(ctx);
+                break;
             }
-            void* data = pipes[i].data;
-            ctx->gpr[0] = (uint32_t) data;
-            break;
         }
     }
 }
@@ -202,6 +214,11 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
     return;
+}
+/*Should loop through all pipes and check whether the data is/isn't available
+ */
+void checkAvailable(){
+    
 }
 
 void hilevel_handler_irq(ctx_t* ctx) {
@@ -263,16 +280,20 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         case 0x08 : { //create new pipe
             PL011_putc(UART0,'P',true);
             int* fd = (int*) ctx->gpr[0];
+            pipes[activePipes].processId = current->pid;
             pipes[activePipes].sourceId = (uint32_t)*fd;
             pipes[activePipes].destId   = (uint32_t)*(fd + 1);
             pipes[activePipes].data     = NULL;
+            pipes[activePipes].waitingToSend = false;
+            pipes[activePipes].waitingToReceive = false;
+            activePipes++;
             break;
         }
         case 0x09:{ //send from source
             PL011_putc(UART0,'S',true);
             uint32_t sourceId = (uint32_t) (ctx->gpr[0]);
             void* data        = (void*) (ctx->gpr[1]);
-            place_on_pipe(sourceId,data);
+            place_on_pipe(ctx,sourceId,data);
             break;
         }
         case 0x10:{ //receive from dest
