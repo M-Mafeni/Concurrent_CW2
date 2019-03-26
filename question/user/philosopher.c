@@ -12,10 +12,9 @@ void printf(char* string){
 void main_philosopher(){
     int Pid = getPID();
 //     int destination = *(&tos_channelRight + 0) + 1;
-    char* offset = (char*) receive(Pid + 1);
     char id[2];
-//     itoa(id,*offset);
-    printf(offset);
+    itoa(id,Pid);
+    printf(id);
     printf("\n");
     exit(EXIT_SUCCESS);
 }

@@ -10,8 +10,16 @@ void main_philosopherFactory(){
     for(int i= 0; i < 16; i++){
         //channelsFrom[i][0] = send;
         //channelsFrom[i][1] = receive;
+        channelsRight[i][0] = i;
+        channelsRight[i][1] = (i+1)%16;
+        pipe(channelsRight[i]);
+        channelsLeft[i][0] = i;
+        channelsLeft[i][1] = (i+1)%16;
+        pipe(channelsLeft[i]);
         
     } 
+    memcpy(&tos_channelRight,channelsRight,sizeof(channelsRight) *sizeof(channelsRight[0]));
+    memcpy(&tos_channelLeft,channelsLeft,sizeof(channelsLeft) *sizeof(channelsLeft[0]));
     int offset;
     for(int i = 0; i < 16; i++){
         int a = fork();
@@ -19,33 +27,25 @@ void main_philosopherFactory(){
             exec(&main_philosopher);
             exit(EXIT_SUCCESS);
         }else{
-            if(i == 0){
-                //send an offset value to get the right index
-                //offset should be smallest value;
-                offset = a; //a = child.pid
-            }
-            int neighbour;
-            if(a + 1 < neighbour + offset){
-                neighbour = a + 1;
-            }else{
-                neighbour = offset;
-            }
-            channelsRight[i][0] = a;
-            channelsRight[i][1] = neighbour;
-            pipe(channelsRight[i]);
-            channelsLeft[i][0] = neighbour;
-            channelsLeft[i][1] = a;
-            pipe(channelsLeft[i]);
-            int sourceId = (int)*(&tos_channelRight + i) + 0;
-//             send(sourceId,&offset);
+//             if(i == 0){
+//                 //send an offset value to get the right index
+//                 //offset should be smallest value;
+//                 offset = a; //a = child.pid
+//             }
+//             int neighbour;
+//             if(a + 1 < neighbour + offset){
+//                 neighbour = a + 1;
+//             }else{
+//                 neighbour = offset;
+//             }
+//             int sourceId = (int)*(&tos_channelRight + i) + 0;
+// //             send(sourceId,&offset);
         }
     }
-    memcpy(&tos_channelRight,channelsRight,sizeof(channelsRight) *sizeof(channelsRight[0]));
-    memcpy(&tos_channelLeft,channelsLeft,sizeof(channelsLeft) *sizeof(channelsLeft[0]));
-    for(int i = 0; i < 16; i++){
-        char x[2];
-        itoa(x,offset);
-        send(channelsLeft[i][0],x);
-    }
+//     for(int i = 0; i < 16; i++){
+//         char x[2];
+//         itoa(x,offset);
+//         send(channelsLeft[i][0],x);
+//     }
     exit(EXIT_SUCCESS);
 }
