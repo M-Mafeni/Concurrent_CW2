@@ -158,7 +158,7 @@ void pipe(const int *fd){
     return;
 }
 
-void send(const int sourceId, void *data){
+void send(const int sourceId, const void *data){
     asm volatile( "mov r0, %1 \n" //r0 = sourceId
                   "mov r1, %2 \n" //r1 = data
                   "svc %0     \n"

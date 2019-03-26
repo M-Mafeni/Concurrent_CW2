@@ -11,7 +11,8 @@ void printf(char* string){
  */
 void main_philosopher(){
     int Pid = getPID();
-//     int destination = *(&tos_channelRight + 0) + 1;
+    int destination = *(&tos_channelRight + 0) + 1;
+    char* test = (char*) receive(destination);
     char id[2];
     itoa(id,Pid);
     printf(id);

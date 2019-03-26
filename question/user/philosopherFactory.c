@@ -43,6 +43,7 @@ void main_philosopherFactory(){
         }
     }
 //     for(int i = 0; i < 16; i++){
+//         int offset = 3;
 //         char x[2];
 //         itoa(x,offset);
 //         send(channelsLeft[i][0],x);

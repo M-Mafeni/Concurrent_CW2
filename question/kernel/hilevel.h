@@ -59,6 +59,7 @@ typedef struct pipe{
     uint32_t destId;
     bool waitingToSend;
     bool waitingToReceive;
+    void* buffer[3];
     void *data;
 } pipe;
 #endif

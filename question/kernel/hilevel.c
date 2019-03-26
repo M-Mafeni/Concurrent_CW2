@@ -53,7 +53,7 @@ int getMax(){
     int max_priority = -1;
     int max_index = -1;
     for( int i = 0; i < length; i++){
-        if(pcb[i].priority > max_priority && !(pcb[i].status == STATUS_TERMINATED || pcb[i].status == STATUS_WAITING)){
+        if(pcb[i].priority > max_priority && !(pcb[i].status == STATUS_TERMINATED || pcb[i].status == STATUS_WAITING) && pcb[i].pid != -1){
             max_priority = pcb[i].priority;
             max_index = i;
         }
@@ -65,7 +65,7 @@ void schedule_priority(ctx_t* ctx){
     dispatch(ctx,current,&pcb[max]);
     pcb[max].status = STATUS_EXECUTING;
     for(int i = 0; i < length; i++){
-        if(pcb[i].pid != -1 && pcb[i].status != STATUS_TERMINATED && i != max){
+        if(pcb[i].pid != -1 && !(pcb[i].status == STATUS_TERMINATED || pcb[i].status == STATUS_WAITING) && i != max){
             pcb[i].status = STATUS_READY;
             pcb[i].priority += pcb[i].priority_change;
         }
@@ -132,20 +132,26 @@ void place_on_pipe(ctx_t* ctx,uint32_t sourceId,void* data){
         if(pipes[i].sourceId == sourceId){
             if(pipes[i].data == NULL){
                 pipes[i].data = data;
-//                 data = NULL;
+                data = NULL;
                 break;
             }else{
-                current->status = STATUS_WAITING;
-                pipes[i].waitingToSend = true;
-                dispatch(ctx,current,current);
-                schedule_priority(ctx);
-                break;
+           //     place in buffer
+           for(int j = 0; j < 3; j++){
+               if(pipes[i].buffer[j] == NULL){
+                   pipes[i].buffer[j] = data;
+                   break;
+               } 
+           }
+//                 current->status = STATUS_WAITING;
+//                 pipes[i].waitingToSend = true;
+//                 dispatch(ctx,current,current);
+//                 schedule_priority(ctx);
+//                 break;
             }
         }
     }
     return;
 }
-
 void receive_from_pipe(ctx_t* ctx,uint32_t destId){
     for(int i = 0; i < No_of_pipes; i++){
         if(pipes[i].destId == destId){
@@ -153,8 +159,18 @@ void receive_from_pipe(ctx_t* ctx,uint32_t destId){
                 void* data = pipes[i].data;
                 ctx->gpr[0] = (uint32_t) data;
                 pipes[i].data = NULL;
-                break;
+                return;
             }else{
+                //check buffer
+                for(int j = 0; j < 3; j++){
+                    if(pipes[i].buffer[j] != NULL){
+                        void* data = pipes[i].buffer[j];
+                        ctx->gpr[0] = (uint32_t) data;
+                        pipes[i].buffer[j] = NULL;
+                        return;
+                    }
+                }
+                //if no data was found
                 current->status = STATUS_WAITING;
                 pipes[i].waitingToReceive = true;
                 dispatch(ctx,current,current);
@@ -165,7 +181,31 @@ void receive_from_pipe(ctx_t* ctx,uint32_t destId){
     }
 }
 
-
+void checkAvailableToReceive(){
+    for(int i = 0; i < No_of_pipes; i++){
+        pipe p = pipes[i];
+        if(p.waitingToReceive){
+            //check for data
+            pid_t processId = p.processId;
+            if(p.data != NULL){
+                pcb[processId].ctx.gpr[0] = (uint32_t) p.data;
+                pcb[processId].status = STATUS_READY;
+                p.waitingToReceive = false;
+            }else{
+                //check buffer
+                for(int j = 0; j < 3; j++){
+                    if(p.buffer[j] != NULL){
+                        pcb[processId].ctx.gpr[0] = (uint32_t) p.buffer[j];
+                        pcb[processId].status = STATUS_READY;
+                        p.waitingToReceive = false;
+                    }
+                }
+                //no data was found. increase priority
+                pcb[processId].priority += pcb[processId].priority_change;
+            }
+        }
+    } 
+}
 
 void hilevel_handler_rst( ctx_t* ctx              ) {
     /* Initialises PCBs, representing user processes stemming from execution
@@ -182,7 +222,6 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
         topOfProcesses[i] = 0;
         if(i < 16){
             //set default pipe values
-            memset(&pipes[i],0,sizeof(pipes));
             pipes[i].data = NULL;
         }
     }
@@ -217,9 +256,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
 }
 /*Should loop through all pipes and check whether the data is/isn't available
  */
-void checkAvailable(){
-    
-}
+
 
 void hilevel_handler_irq(ctx_t* ctx) {
     // Step 2: read  the interrupt identifier so we know the source.
@@ -229,7 +266,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
-    schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
+    checkAvailableToReceive();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
   }
 
   // Step 5: write the interrupt identifier to signal we're done.
