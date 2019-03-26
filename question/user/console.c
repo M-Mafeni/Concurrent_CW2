@@ -37,7 +37,7 @@ void gets( char* x, int n ) {
 extern void main_P3();
 extern void main_P4();
 extern void main_P5();
-extern void main_philosopher();
+extern void main_philosopherFactory();
 extern void main_test();
 
 void* load( char* x ) {
@@ -51,7 +51,7 @@ void* load( char* x ) {
     return &main_P5;
   }
   else if(0 == strcmp(x,"philosopher")){
-      return &main_philosopher;
+      return &main_philosopherFactory;
   }
   else if(0 == strcmp(x,"test")){
       return &main_test;

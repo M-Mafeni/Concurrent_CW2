@@ -24,10 +24,13 @@ SECTIONS {
   tos_svc = .;
   /* allocate stack for shared memory */
   .       = . + 0x00001000;
-  tos_SharedMem = .;
+  tos_channelRight = .;
   /* allocate stack for shared memory 1 */
   .       = . + 0x00001000;
-  tos_SharedMem1  = .;
+  tos_channelLeft  = .;
+  /*allocate stack for philosophers    */
+   .       = . + 0x00001000;
+   tos_philosophers = .;
   /*allocate stack for console           */
   .       = . + 0x00001000;
   tos_console  = .;

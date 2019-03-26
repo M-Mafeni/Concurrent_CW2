@@ -42,6 +42,7 @@ typedef int pid_t;
 #define CREATE_PIPE   ( 0x08 )
 #define SYS_SEND      ( 0x09 )
 #define SYS_RECEIVE   ( 0x10 )
+#define GET_PID       ( 0x0A )
 
 
 #define SIG_TERM      ( 0x00 )
@@ -82,5 +83,9 @@ extern void nice( pid_t pid, int x );
 extern void pipe(const int *fd);
 extern void send(const int sourceId, void *data);
 extern void *receive(const int destId);
+//gets the process ID
+extern int  getPID();
+
+extern int getChildPID();
 
 #endif

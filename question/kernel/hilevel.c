@@ -84,7 +84,6 @@ int getUniqueId(){
 
 extern void     main_console();
 extern uint32_t tos_console;
-extern uint32_t tos_SharedMem;
 
 void create_new_process(ctx_t* ctx){
     int id = getUniqueId();
@@ -133,6 +132,7 @@ void place_on_pipe(ctx_t* ctx,uint32_t sourceId,void* data){
         if(pipes[i].sourceId == sourceId){
             if(pipes[i].data == NULL){
                 pipes[i].data = data;
+//                 data = NULL;
                 break;
             }else{
                 current->status = STATUS_WAITING;
@@ -302,6 +302,9 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             uint32_t destId = (uint32_t) (ctx->gpr[0]);
             receive_from_pipe(ctx,destId);
             break;
+        }
+        case 0x0A:{ //return PID
+            ctx->gpr[0] = current->pid;
         }
         default : { //case 0x0?
             break;

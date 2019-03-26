@@ -177,3 +177,11 @@ void *receive(const int destId){
                   : "r0");
     return r;
 }
+int getPID(){
+    int r;
+    asm volatile("svc %1    \n"
+                "mov %0, r0  \n"
+                : "=r" (r)
+                : "I" (GET_PID));
+    return r;
+}
