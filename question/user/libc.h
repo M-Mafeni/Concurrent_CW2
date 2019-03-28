@@ -15,6 +15,7 @@
 // Define a type that that captures a Process IDentifier (PID).
 
 typedef int pid_t;
+typedef int sem_t; //semaphore implemented as counter
 
 /* The definitions below capture symbolic constants within these classes:
  *
@@ -39,10 +40,11 @@ typedef int pid_t;
 #define SYS_KILL      ( 0x06 )
 #define SYS_NICE      ( 0x07 )
 //Message passing system calls
-#define CREATE_PIPE   ( 0x08 )
-#define SYS_SEND      ( 0x09 )
-#define SYS_RECEIVE   ( 0x10 )
-#define GET_PID       ( 0x0A )
+#define SEM_INIT      ( 0x08 )
+#define SEM_WAIT      ( 0x09 )
+#define SEM_POST      ( 0x10 )
+#define SEM_DESTROY   ( 0x0A )
+#define GET_PID       ( 0x0B )
 
 
 #define SIG_TERM      ( 0x00 )
@@ -80,12 +82,11 @@ extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to x
 extern void nice( pid_t pid, int x );
 
-extern void pipe(const int *fd);
-extern void send(const int sourceId, const void *data);
-extern void *receive(const int destId);
+extern void sem_init(sem_t* s);
+extern void sem_wait(sem_t* s);
+extern void sem_post(sem_t* s);
+extern void sem_destroy(sem_t* s);
 //gets the process ID
 extern int  getPID();
-
-extern int getChildPID();
 
 #endif
