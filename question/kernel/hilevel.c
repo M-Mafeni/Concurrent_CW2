@@ -274,6 +274,8 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         case 0x10:{ //sem post
             sem_t* val = (sem_t*)(ctx->gpr[0]);
             *val = 0; //resource is now available for use
+            checkAvailable();
+            schedule_priority(ctx);
             break;
         }
         case 0x0A:{ //sem destroy
