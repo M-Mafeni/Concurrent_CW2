@@ -127,41 +127,38 @@ void exec_program(ctx_t* ctx,uint32_t address){
 void kill_process(int id) {
     pcb[id].status = STATUS_TERMINATED;
 }
-void place_on_pipe(ctx_t* ctx,uint32_t sourceId,void* data){
+void place_on_pipe(ctx_t* ctx,uint32_t sourceId,uint32_t destId,void* data){
     for(int i = 0; i < No_of_pipes; i++){
-        if(pipes[i].sourceId == sourceId){
+        if(pipes[i].sourceId == sourceId && pipes[i].destId == destId){
             if(pipes[i].data == NULL){
                 pipes[i].data = data;
                 data = NULL;
                 break;
             }else{
-           //     place in buffer
-           for(int j = 0; j < 3; j++){
-               if(pipes[i].buffer[j] == NULL){
-                   pipes[i].buffer[j] = data;
-                   break;
-               } 
-           }
-//                 current->status = STATUS_WAITING;
-//                 pipes[i].waitingToSend = true;
-//                 dispatch(ctx,current,current);
-//                 schedule_priority(ctx);
-//                 break;
+                //place in buffer
+               for(int j = 0; j < 3; j++){
+                   if(pipes[i].buffer[j] == NULL){
+                       pipes[i].buffer[j] = data;
+                       break;
+                   } 
+               }
+               //currently doesn't deal with the case when the buffer's full
             }
         }
     }
     return;
 }
-void receive_from_pipe(ctx_t* ctx,uint32_t destId){
+void receive_from_pipe(ctx_t* ctx,uint32_t destId,uint32_t sourceId){
     for(int i = 0; i < No_of_pipes; i++){
-        if(pipes[i].destId == destId){
-            if(pipes[i].data != NULL){
+        pipe p = pipes[i];
+        if(p.destId == destId && p.sourceId == sourceId){
+             if(pipes[i].data != NULL){
                 void* data = pipes[i].data;
                 ctx->gpr[0] = (uint32_t) data;
                 pipes[i].data = NULL;
                 return;
-            }else{
-                //check buffer
+             }else{   
+                 //check buffer
                 for(int j = 0; j < 3; j++){
                     if(pipes[i].buffer[j] != NULL){
                         void* data = pipes[i].buffer[j];
@@ -176,7 +173,7 @@ void receive_from_pipe(ctx_t* ctx,uint32_t destId){
                 dispatch(ctx,current,current);
                 schedule_priority(ctx);
                 break;
-            }
+             }
         }
     }
 }
@@ -191,6 +188,7 @@ void checkAvailableToReceive(){
                 pcb[processId].ctx.gpr[0] = (uint32_t) p.data;
                 pcb[processId].status = STATUS_READY;
                 p.waitingToReceive = false;
+                break;
             }else{
                 //check buffer
                 for(int j = 0; j < 3; j++){
@@ -198,6 +196,7 @@ void checkAvailableToReceive(){
                         pcb[processId].ctx.gpr[0] = (uint32_t) p.buffer[j];
                         pcb[processId].status = STATUS_READY;
                         p.waitingToReceive = false;
+                        break;
                     }
                 }
                 //no data was found. increase priority
@@ -326,18 +325,21 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             activePipes++;
             break;
         }
-        case 0x09:{ //send from source
+        case 0x09:{ //send from source to dest
             PL011_putc(UART0,'S',true);
             uint32_t sourceId = (uint32_t) (ctx->gpr[0]);
-            void* data        = (void*) (ctx->gpr[1]);
-            place_on_pipe(ctx,sourceId,data);
+            uint32_t destId  =  (uint32_t) (ctx->gpr[1]);
+            void* data        = (void*) (ctx->gpr[2]);
+            place_on_pipe(ctx,sourceId,destId,data);
             break;
         }
-        case 0x10:{ //receive from dest
+        case 0x10:{ //receive from dest 
             PL011_putc(UART0,'R',true);
             PL011_putc(UART0,'E',true);
+            PL011_putc(UART0,'C',true);
             uint32_t destId = (uint32_t) (ctx->gpr[0]);
-            receive_from_pipe(ctx,destId);
+            uint32_t sourceId = (uint32_t) (ctx->gpr[1]);
+            receive_from_pipe(ctx,destId,sourceId);
             break;
         }
         case 0x0A:{ //return PID

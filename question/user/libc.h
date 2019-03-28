@@ -81,8 +81,8 @@ extern int  kill( pid_t pid, int x );
 extern void nice( pid_t pid, int x );
 
 extern void pipe(const int *fd);
-extern void send(const int sourceId, const void *data);
-extern void *receive(const int destId);
+extern void send(const int sourceId, const int destId,const void *data);
+extern void *receive(const int destId,const int sourceId);
 //gets the process ID
 extern int  getPID();
 
