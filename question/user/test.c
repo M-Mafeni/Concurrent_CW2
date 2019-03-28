@@ -1,7 +1,7 @@
 
 #include "test.h"
 
-extern uint32_t tos_channelRight;
+// extern uint32_t tos_channelRight;
 
 void main_test(){
 //    int fd[2] = {96,95};

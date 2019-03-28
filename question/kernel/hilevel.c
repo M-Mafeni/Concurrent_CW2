@@ -262,9 +262,12 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
                     if(waiting[i].pid == -1){
                         waiting[i].pid = current->pid;
                         waiting[i].semaphore = val;
+                        schedule_priority(ctx);
                         break;
                     }
                 }
+            }else{
+                *val = 1; //resource is now in use
             }
             break;         
         }
