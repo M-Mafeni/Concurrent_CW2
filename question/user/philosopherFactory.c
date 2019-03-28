@@ -19,14 +19,14 @@ void main_philosopherFactory(){
                 itoa(id,i);
                 char philosopher[16] = "philosopher ";
                 strcat(philosopher,id);
-                sem_wait((sem_t*)*(&tos_sharedMem + i));
-                sem_wait((sem_t*)*(&tos_sharedMem + ((i + 1) % 16)));
+                sem_wait((sem_t*)(&tos_sharedMem + i));
+                sem_wait((sem_t*)(&tos_sharedMem + ((i + 1) % 16)));
                 char eating[50];
                 strcpy(eating,philosopher);
                 strcat(eating," is eating\n");
                 printf(eating);
-                sem_post((sem_t*)*(&tos_sharedMem + i));
-                sem_post((sem_t*)*(&tos_sharedMem + ((i + 1) % 16)));
+                sem_post((sem_t*)(&tos_sharedMem + i));
+                sem_post((sem_t*)(&tos_sharedMem + ((i + 1) % 16)));
                 char finished[60];
                 strcpy(finished,philosopher);
                 strcat(finished," has finished eating\n");
