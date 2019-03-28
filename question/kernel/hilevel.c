@@ -4,16 +4,15 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
-#define No_of_pipes 40
 #include "hilevel.h"
+#define waitNo 25
 pcb_t* current = NULL;
 pcb_t pcb[50];
+waitingProcess waiting[waitNo];
 /*array stores the stack pointers for the processes for
 better memory allocation*/
 uint32_t topOfProcesses[50];
-pipe pipes[No_of_pipes];
 int length = sizeof(pcb) / sizeof(pcb[0]);
-int activePipes = 0;
 uint32_t topOfStack;
 
 //reset priority, add priorities
@@ -127,84 +126,8 @@ void exec_program(ctx_t* ctx,uint32_t address){
 void kill_process(int id) {
     pcb[id].status = STATUS_TERMINATED;
 }
-void place_on_pipe(ctx_t* ctx,uint32_t sourceId,uint32_t destId,void* data){
-    for(int i = 0; i < No_of_pipes; i++){
-        if(pipes[i].sourceId == sourceId && pipes[i].destId == destId){
-            if(pipes[i].data == NULL){
-                pipes[i].data = data;
-                data = NULL;
-                break;
-            }else{
-                //place in buffer
-               for(int j = 0; j < 3; j++){
-                   if(pipes[i].buffer[j] == NULL){
-                       pipes[i].buffer[j] = data;
-                       break;
-                   } 
-               }
-               //currently doesn't deal with the case when the buffer's full
-            }
-        }
-    }
-    return;
-}
-void receive_from_pipe(ctx_t* ctx,uint32_t destId,uint32_t sourceId){
-    for(int i = 0; i < No_of_pipes; i++){
-        pipe p = pipes[i];
-        if(p.destId == destId && p.sourceId == sourceId){
-             if(pipes[i].data != NULL){
-                void* data = pipes[i].data;
-                ctx->gpr[0] = (uint32_t) data;
-                pipes[i].data = NULL;
-                return;
-             }else{   
-                 //check buffer
-                for(int j = 0; j < 3; j++){
-                    if(pipes[i].buffer[j] != NULL){
-                        void* data = pipes[i].buffer[j];
-                        ctx->gpr[0] = (uint32_t) data;
-                        pipes[i].buffer[j] = NULL;
-                        return;
-                    }
-                }
-                //if no data was found
-                current->status = STATUS_WAITING;
-                pipes[i].waitingToReceive = true;
-                dispatch(ctx,current,current);
-                schedule_priority(ctx);
-                break;
-             }
-        }
-    }
-}
 
-void checkAvailableToReceive(){
-    for(int i = 0; i < No_of_pipes; i++){
-        pipe p = pipes[i];
-        if(p.waitingToReceive){
-            //check for data
-            pid_t processId = p.processId;
-            if(p.data != NULL){
-                pcb[processId].ctx.gpr[0] = (uint32_t) p.data;
-                pcb[processId].status = STATUS_READY;
-                p.waitingToReceive = false;
-                break;
-            }else{
-                //check buffer
-                for(int j = 0; j < 3; j++){
-                    if(p.buffer[j] != NULL){
-                        pcb[processId].ctx.gpr[0] = (uint32_t) p.buffer[j];
-                        pcb[processId].status = STATUS_READY;
-                        p.waitingToReceive = false;
-                        break;
-                    }
-                }
-                //no data was found. increase priority
-                pcb[processId].priority += pcb[processId].priority_change;
-            }
-        }
-    } 
-}
+
 
 void hilevel_handler_rst( ctx_t* ctx              ) {
     /* Initialises PCBs, representing user processes stemming from execution
@@ -219,10 +142,10 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     for(int i = 0; i < length; i++){
         pcb[i].pid = -1;
         topOfProcesses[i] = 0;
-        if(i < 16){
-            //set default pipe values
-            pipes[i].data = NULL;
-        }
+    }
+    for(int i = 0; i < waitNo; i++){
+        waiting[i].pid = -1;
+        waiting[i].semaphore = NULL;
     }
     pcb_t console;
     memset(&console, 0, sizeof(pcb_t));
@@ -253,8 +176,19 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     int_enable_irq();
     return;
 }
-/*Should loop through all pipes and check whether the data is/isn't available
- */
+
+//checks through waiting queue to see if semaphore value changed
+void checkAvailable(){
+    for(int i = 0; i < waitNo; i++){
+        waitingProcess w = waiting[i];
+        if((w.semaphore) != NULL && *(w.semaphore) == 0){
+            pcb[w.pid].status = STATUS_READY;
+            //remove from queue
+            w.pid = -1;
+            w.semaphore = NULL;
+        }
+    }
+}
 
 
 void hilevel_handler_irq(ctx_t* ctx) {
@@ -265,7 +199,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
-    checkAvailableToReceive();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
+    schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
   }
 
   // Step 5: write the interrupt identifier to signal we're done.
@@ -313,36 +247,41 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             kill_process(id);
             break;
         }
-        case 0x08 : { //create new pipe
-            PL011_putc(UART0,'P',true);
-            int* fd = (int*) ctx->gpr[0];
-            pipes[activePipes].processId = current->pid;
-            pipes[activePipes].sourceId = (uint32_t)*fd;
-            pipes[activePipes].destId   = (uint32_t)*(fd + 1);
-            pipes[activePipes].data     = NULL;
-            pipes[activePipes].waitingToSend = false;
-            pipes[activePipes].waitingToReceive = false;
-            activePipes++;
+        case 0x08 : { //sem init
             break;
         }
-        case 0x09:{ //send from source to dest
-            PL011_putc(UART0,'S',true);
-            uint32_t sourceId = (uint32_t) (ctx->gpr[0]);
-            uint32_t destId  =  (uint32_t) (ctx->gpr[1]);
-            void* data        = (void*) (ctx->gpr[2]);
-            place_on_pipe(ctx,sourceId,destId,data);
+        case 0x09:{ //sem wait
+            //this should stop execution until semaphore values is availble
+            //i.e = 0
+            sem_t* val = (sem_t*)(ctx->gpr[0]);
+            if(*val == 1){ //not available
+                dispatch(ctx,current,current);
+                current->status = STATUS_WAITING;
+                //place entry in waiting queue
+                for(int i= 0; i < waitNo; i++){
+                    if(waiting[i].pid == -1){
+                        waiting[i].pid = current->pid;
+                        waiting[i].semaphore = val;
+                        schedule_priority(ctx);
+                        break;
+                    }
+                }
+            }else{
+                *val = 1; //resource is now in use
+            }
+            break;         
+        }
+        case 0x10:{ //sem post
+            sem_t* val = (sem_t*)(ctx->gpr[0]);
+            *val = 0; //resource is now available for use
+            checkAvailable();
+            schedule_priority(ctx);
             break;
         }
-        case 0x10:{ //receive from dest 
-            PL011_putc(UART0,'R',true);
-            PL011_putc(UART0,'E',true);
-            PL011_putc(UART0,'C',true);
-            uint32_t destId = (uint32_t) (ctx->gpr[0]);
-            uint32_t sourceId = (uint32_t) (ctx->gpr[1]);
-            receive_from_pipe(ctx,destId,sourceId);
+        case 0x0A:{ //sem destroy
             break;
         }
-        case 0x0A:{ //return PID
+        case 0x0B:{ //return PID
             ctx->gpr[0] = current->pid;
         }
         default : { //case 0x0?

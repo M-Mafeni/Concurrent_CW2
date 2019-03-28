@@ -147,38 +147,35 @@ void nice( int pid, int x ) {
 
   return;
 }
-
-void pipe(const int *fd){
-    int r;
-    asm volatile( "mov r0, %1 \n" //r0 = fd
-                  "svc %0     \n "
+void sem_init(sem_t* s){
+    *s = 0; //semaphore values should be initialised with 0
+    return;
+}
+void sem_wait(sem_t* s){
+    asm volatile("mov r0, %1 \n"
+                 "svc %0     \n"
                  :
-                 : "I" (CREATE_PIPE), "r" (fd)
-                 : "r0" );
+                 : "I" (SEM_WAIT), "r" (s)
+                 : "r0");
+    return;
+}
+void sem_post(sem_t* s){
+    asm volatile("mov r0, %1 \n"
+                 "svc %0     \n"
+                 :
+                 : "I" (SEM_POST), "r" (s)
+                 : "r0");
+    return;
+}
+void sem_destroy(sem_t* s){
+    asm volatile("mov r0, %1 \n"
+                 "svc %0     \n"
+                 :
+                 : "I" (SEM_DESTROY), "r" (s)
+                 : "r0");
     return;
 }
 
-void send(const int sourceId, const int destId,const void *data){
-    asm volatile( "mov r0, %1 \n" //r0 = sourceId
-                  "mov r1, %2 \n" //r1 = destId
-                  "mov r2, %3 \n" //r2 = data
-                  "svc %0     \n"
-                  :
-                  : "I" (SYS_SEND), "r" (sourceId), "r" (destId), "r" (data)
-                  : "r0", "r1","r2");
-    return;
-}
-void *receive(const int destId,const int sourceId){
-    void *r;
-    asm volatile("mov r0, %2 \n"
-                 "mov r1, %3 \n"
-                  "svc %1    \n"
-                  "mov %0, r0 \n" // assign r0 =    r
-                  : "=r" (r)
-                  : "I" (SYS_RECEIVE), "r" (destId), "r" (sourceId)
-                  : "r0","r1");
-    return r;
-}
 int getPID(){
     int r;
     asm volatile("svc %1    \n"
