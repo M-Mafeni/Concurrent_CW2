@@ -31,7 +31,7 @@
 
 //struct for Process Control Block
 typedef int pid_t;
-
+typedef int sem_t;
 typedef enum {
   STATUS_CREATED,
   STATUS_READY,
@@ -52,14 +52,10 @@ typedef struct  pcb_t{
      int priority_change;
 } pcb_t;
 
-//pipe struct to be used between processes
-typedef struct pipe{
-    pid_t processId; //process that created the pipe
-    uint32_t sourceId;
-    uint32_t destId;
-    bool waitingToSend;
-    bool waitingToReceive;
-    void* buffer[3];
-    void *data;
-} pipe;
+//contains process ID and semaphore pointer
+//used to check if value sempahore points to has changed
+typedef struct waitingProcess{
+    pid_t pid;
+    sem_t* semaphore;
+} waitingProcess;
 #endif

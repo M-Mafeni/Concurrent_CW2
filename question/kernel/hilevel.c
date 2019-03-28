@@ -5,8 +5,10 @@
  * LICENSE.txt within the associated archive or repository).
  */
 #include "hilevel.h"
+#define waitNo 25
 pcb_t* current = NULL;
 pcb_t pcb[50];
+waitingProcess waiting[waitNo];
 /*array stores the stack pointers for the processes for
 better memory allocation*/
 uint32_t topOfProcesses[50];
@@ -127,7 +129,6 @@ void kill_process(int id) {
 
 
 
-
 void hilevel_handler_rst( ctx_t* ctx              ) {
     /* Initialises PCBs, representing user processes stemming from execution
     * of user programs.  Note in each case that
@@ -141,6 +142,10 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     for(int i = 0; i < length; i++){
         pcb[i].pid = -1;
         topOfProcesses[i] = 0;
+    }
+    for(int i = 0; i < waitNo; i++){
+        waiting[i].pid = -1;
+        waiting[i].semaphore = NULL;
     }
     pcb_t console;
     memset(&console, 0, sizeof(pcb_t));
@@ -172,6 +177,18 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     return;
 }
 
+//checks through waiting queue to see if semaphore value changed
+void checkAvailable(){
+    for(int i = 0; i < waitNo; i++){
+        waitingProcess w = waiting[i];
+        if((w.semaphore) != NULL && *(w.semaphore) == 0){
+            pcb[w.pid].status = STATUS_READY;
+            //remove from queue
+            w.pid = -1;
+            w.semaphore = NULL;
+        }
+    }
+}
 
 
 void hilevel_handler_irq(ctx_t* ctx) {
@@ -234,9 +251,26 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             break;
         }
         case 0x09:{ //sem wait
-            break;
+            //this should stop execution until semaphore values is availble
+            //i.e = 0
+            sem_t* val = (sem_t*)(ctx->gpr[0]);
+            if(*val == 1){ //not available
+                dispatch(ctx,current,current);
+                current->status = STATUS_WAITING;
+                //place entry in waiting queue
+                for(int i= 0; i < waitNo; i++){
+                    if(waiting[i].pid == -1){
+                        waiting[i].pid = current->pid;
+                        waiting[i].semaphore = val;
+                        break;
+                    }
+                }
+            }
+            break;         
         }
         case 0x10:{ //sem post
+            sem_t* val = (sem_t*)(ctx->gpr[0]);
+            *val = 0; //resource is now available for use
             break;
         }
         case 0x0A:{ //sem destroy
