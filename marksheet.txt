@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [46] hours
+effort : [46.5] hours
 
 -------------------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ are not (necessarily) detailed explicitly.
 
     Stage 2 : closed generalisations and enhancements
 [X]           - fork, exec and exit system calls                     ( 15%)
-[?]           - Inter-Process Communication (IPC)                    ( 15%)
+[*]           - Inter-Process Communication (IPC)                    ( 15%)
 
     Stage 3 : open   generalisations and enhancements                ( 30%)
 [?]           - MMU-based protection and virtualisation
@@ -71,6 +71,8 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-[...]
+[I used semaphores to tackle the dining philosophers problem. The problem with this is that it is very special purpose
+ There is also no memory protection which makes initialising shared memory easier but could be a potential problem for more complex programs
+ ]
 
 -------------------------------------------------------------------------------

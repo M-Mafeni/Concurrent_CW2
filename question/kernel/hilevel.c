@@ -28,12 +28,12 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
     next_pid = '0' + next->pid;
   }
 
-    PL011_putc( UART0, '[',      true );
-    PL011_putc( UART0, prev_pid, true );
-    PL011_putc( UART0, '-',      true );
-    PL011_putc( UART0, '>',      true );
-    PL011_putc( UART0, next_pid, true );
-    PL011_putc( UART0, ']',      true );
+//     PL011_putc( UART0, '[',      true );
+//     PL011_putc( UART0, prev_pid, true );
+//     PL011_putc( UART0, '-',      true );
+//     PL011_putc( UART0, '>',      true );
+//     PL011_putc( UART0, next_pid, true );
+//     PL011_putc( UART0, ']',      true );
 
     current = next;                             // update   executing index   to P_{next}
 
