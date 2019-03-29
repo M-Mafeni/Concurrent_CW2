@@ -247,6 +247,11 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             kill_process(id);
             break;
         }
+        case 0x07 : { //Nice Call
+            pid_t pid = (pid_t)(ctx->gpr[0]);
+            int priority = (int) (ctx->gpr[1]);
+            pcb[pid].priority = priority;
+        }
         case 0x08 : { //sem init
             break;
         }
