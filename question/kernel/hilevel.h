@@ -50,6 +50,7 @@ typedef struct  pcb_t{
      ctx_t    ctx;
      int priority;
      int priority_change;
+     int waitingTime;
 } pcb_t;
 
 //contains process ID and semaphore pointer

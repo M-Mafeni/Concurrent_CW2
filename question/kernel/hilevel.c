@@ -28,12 +28,12 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
     next_pid = '0' + next->pid;
   }
 
-//     PL011_putc( UART0, '[',      true );
-//     PL011_putc( UART0, prev_pid, true );
-//     PL011_putc( UART0, '-',      true );
-//     PL011_putc( UART0, '>',      true );
-//     PL011_putc( UART0, next_pid, true );
-//     PL011_putc( UART0, ']',      true );
+    PL011_putc( UART0, '[',      true );
+    PL011_putc( UART0, prev_pid, true );
+    PL011_putc( UART0, '-',      true );
+    PL011_putc( UART0, '>',      true );
+    PL011_putc( UART0, next_pid, true );
+    PL011_putc( UART0, ']',      true );
 
     current = next;                             // update   executing index   to P_{next}
 
@@ -114,7 +114,7 @@ void create_new_process(ctx_t* ctx){
         ctx->gpr[0] = child.pid;
         //put process in queue
         pcb[child.pid] = child;
-  
+
     }
     return;
 }
@@ -142,6 +142,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     for(int i = 0; i < length; i++){
         pcb[i].pid = -1;
         topOfProcesses[i] = 0;
+        pcb[i].waitingTime = 0;
     }
     for(int i = 0; i < waitNo; i++){
         waiting[i].pid = -1;
@@ -181,11 +182,25 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
 void checkAvailable(){
     for(int i = 0; i < waitNo; i++){
         waitingProcess w = waiting[i];
+        pcb[w.pid].priority += pcb[w.pid].priority_change * 2;
         if((w.semaphore) != NULL && *(w.semaphore) == 0){
             pcb[w.pid].status = STATUS_READY;
             //remove from queue
             w.pid = -1;
             w.semaphore = NULL;
+        }
+    }
+}
+//checks through process queue for processes
+//that were put to sleep and decreases their time
+void awaken(){
+    for(int i = 0; i < length; i++){
+        if(pcb[i].waitingTime > 0){
+            pcb[i].waitingTime -= 1;
+            pcb[i].priority += pcb[i].priority_change * 2;
+            if(pcb[i].waitingTime == 0){
+                pcb[i].status = STATUS_READY;
+            }
         }
     }
 }
@@ -199,7 +214,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
   if( id == GIC_SOURCE_TIMER0 ) {
-    schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
+    checkAvailable();awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
   }
 
   // Step 5: write the interrupt identifier to signal we're done.
@@ -274,13 +289,13 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             }else{
                 *val = 1; //resource is now in use
             }
-            break;         
+            break;
         }
         case 0x10:{ //sem post
             sem_t* val = (sem_t*)(ctx->gpr[0]);
             *val = 0; //resource is now available for use
-            checkAvailable();
-            schedule_priority(ctx);
+            // checkAvailable();
+            // schedule_priority(ctx);
             break;
         }
         case 0x0A:{ //sem destroy
@@ -288,6 +303,14 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         }
         case 0x0B:{ //return PID
             ctx->gpr[0] = current->pid;
+            break;
+        }
+        case 0X0C:{ //sleep
+            int time = ctx->gpr[0];
+            current->waitingTime = time;
+            current->status = STATUS_WAITING;
+            schedule_priority(ctx);
+            break;
         }
         default : { //case 0x0?
             break;

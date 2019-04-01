@@ -19,6 +19,10 @@ void main_philosopherFactory(){
                 itoa(id,i);
                 char philosopher[16] = "philosopher ";
                 strcat(philosopher,id);
+                char waiting[50];
+                strcpy(waiting,philosopher);
+                strcat(waiting," is thinking\n");
+                printf(waiting);
                 sem_wait((sem_t*)(&tos_sharedMem + i));
                 sem_wait((sem_t*)(&tos_sharedMem + ((i + 1) % 16)));
                 char eating[50];
@@ -30,6 +34,7 @@ void main_philosopherFactory(){
                 char finished[60];
                 strcpy(finished,philosopher);
                 strcat(finished," has finished eating\n");
+                sleep(3);
                 printf(finished);
             }
             exit(EXIT_SUCCESS);

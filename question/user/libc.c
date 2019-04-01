@@ -184,3 +184,11 @@ int getPID(){
                 : "I" (GET_PID));
     return r;
 }
+void sleep(int x){
+    asm volatile("mov %1, r0  \n"
+                "svc %0      \n"
+                :
+                : "I" (SYS_WAIT), "r" (x)
+                : "r0");
+    return;
+}

@@ -45,6 +45,7 @@ typedef int sem_t; //semaphore implemented as counter
 #define SEM_POST      ( 0x10 )
 #define SEM_DESTROY   ( 0x0A )
 #define GET_PID       ( 0x0B )
+#define SYS_WAIT      ( 0x0C )
 
 
 #define SIG_TERM      ( 0x00 )
@@ -88,5 +89,6 @@ extern void sem_post(sem_t* s);
 extern void sem_destroy(sem_t* s);
 //gets the process ID
 extern int  getPID();
-
+//sets the current process status to waiting for x seconds
+extern void sleep(int x);
 #endif
