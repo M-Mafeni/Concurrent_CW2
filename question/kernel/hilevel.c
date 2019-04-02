@@ -4,8 +4,9 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
- 
- //TODO figure out how to display a cursor
+ //TODO make main menu
+ //TODO get it to display fonts
+
 
 #include "hilevel.h"
 #define waitNo 25
@@ -216,13 +217,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     configDisplay();
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
-
-    for( int i = 0; i < 600; i++ ) {
-      for( int j = 0; j < 800; j++ ) {
-        grid[ i ][ j ] = 0x1F << ( ( i / 200 ) * 5 );
-      }
-    }
-    drawLine(grid,0,0,300,400,0);
+    drawChar(grid,'A',300,400,0x7FFF);
     return;
 }
 

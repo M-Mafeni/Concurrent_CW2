@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [46.5] hours
+effort : [50] hours
 
 -------------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ by the assignment description of course).  Let us know what third-party
 source code or resources you used (if any) so it's clear what's your work
 and what isn't:
 
-[...]
+[font bitmap was gotten from https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h]
 
 -------------------------------------------------------------------------------
 
