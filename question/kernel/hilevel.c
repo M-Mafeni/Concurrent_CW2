@@ -4,6 +4,9 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
+ 
+ //TODO figure out how to display a cursor
+
 #include "hilevel.h"
 #define waitNo 25
 pcb_t* current = NULL;
@@ -11,7 +14,6 @@ pcb_t pcb[50];
 waitingProcess waiting[waitNo];
 //grid used for display
 uint16_t grid[ 600 ][ 800 ];
-
 /*array stores the stack pointers for the processes for
 better memory allocation*/
 uint32_t topOfProcesses[50];
@@ -220,6 +222,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
         grid[ i ][ j ] = 0x1F << ( ( i / 200 ) * 5 );
       }
     }
+    drawLine(grid,0,0,300,400,0);
     return;
 }
 
