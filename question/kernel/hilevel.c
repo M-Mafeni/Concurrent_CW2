@@ -9,13 +9,15 @@
 pcb_t* current = NULL;
 pcb_t pcb[50];
 waitingProcess waiting[waitNo];
+//grid used for display
+uint16_t grid[ 600 ][ 800 ];
+
 /*array stores the stack pointers for the processes for
 better memory allocation*/
 uint32_t topOfProcesses[50];
 int length = sizeof(pcb) / sizeof(pcb[0]);
 uint32_t topOfStack;
 
-//reset priority, add priorities
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
 
@@ -126,8 +128,46 @@ void exec_program(ctx_t* ctx,uint32_t address){
 void kill_process(int id) {
     pcb[id].status = STATUS_TERMINATED;
 }
+void configDisplay(){
+    // Configure the LCD display into 800x600 SVGA @ 36MHz resolution.
 
+    SYSCONF->CLCD      = 0x2CAC;     // per per Table 4.3 of datasheet
+    LCD->LCDTiming0    = 0x1313A4C4; // per per Table 4.3 of datasheet
+    LCD->LCDTiming1    = 0x0505F657; // per per Table 4.3 of datasheet
+    LCD->LCDTiming2    = 0x071F1800; // per per Table 4.3 of datasheet
 
+    LCD->LCDUPBASE     = ( uint32_t )( &grid );
+
+    LCD->LCDControl    = 0x00000020; // select TFT   display type
+    LCD->LCDControl   |= 0x00000008; // select 16BPP display mode
+    LCD->LCDControl   |= 0x00000800; // power-on LCD controller
+    LCD->LCDControl   |= 0x00000001; // enable   LCD controller
+
+        /* Configure the mechanism for interrupt handling by
+     *
+     * - configuring then enabling PS/2 controllers st. an interrupt is
+     *   raised every time a byte is subsequently received,
+     * - configuring GIC st. the selected interrupts are forwarded to the
+     *   processor via the IRQ interrupt signal, then
+     * - enabling IRQ interrupts.
+     */
+    PS20->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
+    PS20->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
+    PS21->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
+    PS21->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
+
+    uint8_t ack;
+
+          PL050_putc( PS20, 0xF4 );  // transmit PS/2 enable command
+    ack = PL050_getc( PS20       );  // receive  PS/2 acknowledgement
+          PL050_putc( PS21, 0xF4 );  // transmit PS/2 enable command
+    ack = PL050_getc( PS21       );  // receive  PS/2 acknowledgement
+
+    GICC0->PMR         = 0x000000F0; // unmask all          interrupts
+    GICD0->ISENABLER1 |= 0x00300000; // enable PS2          interrupts
+    GICC0->CTLR        = 0x00000001; // enable GIC interface
+    GICD0->CTLR        = 0x00000001; // enable GIC distributor
+}
 
 void hilevel_handler_rst( ctx_t* ctx              ) {
     /* Initialises PCBs, representing user processes stemming from execution
@@ -171,10 +211,15 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
     GICC0->CTLR         = 0x00000001; // enable GIC interface
     GICD0->CTLR         = 0x00000001; // enable GIC distributor
-
-    int max = getMax();
+    configDisplay();
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
+
+    for( int i = 0; i < 600; i++ ) {
+      for( int j = 0; j < 800; j++ ) {
+        grid[ i ][ j ] = 0x1F << ( ( i / 200 ) * 5 );
+      }
+    }
     return;
 }
 
@@ -213,7 +258,26 @@ void hilevel_handler_irq(ctx_t* ctx) {
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
-  if( id == GIC_SOURCE_TIMER0 ) {
+
+  if     ( id == GIC_SOURCE_PS20 ) { //keyboard interrupt
+   uint8_t x = PL050_getc( PS20 );
+
+   PL011_putc( UART0, '0',                      true );
+   PL011_putc( UART0, '<',                      true );
+   PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true );
+   PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
+   PL011_putc( UART0, '>',                      true );
+ }
+ else if( id == GIC_SOURCE_PS21 ) { //mouse interrupt
+   uint8_t x = PL050_getc( PS21 );
+
+   PL011_putc( UART0, '1',                      true );
+   PL011_putc( UART0, '<',                      true );
+   PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true );
+   PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
+   PL011_putc( UART0, '>',                      true );
+}
+if( id == GIC_SOURCE_TIMER0 ) {
     checkAvailable();awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
   }
 

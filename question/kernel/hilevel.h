@@ -22,6 +22,9 @@
 #include   "GIC.h"
 #include "PL011.h"
 #include "SP804.h"
+#include "PL050.h"
+#include "PL111.h"
+#include   "SYS.h"
 
 
 // Include functionality relating to the kernel.
