@@ -217,7 +217,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     configDisplay();
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
-    drawChar(grid,'A',300,400,0x7FFF);
+    drawChar(grid,'B',300,400,0x7FFF);
     return;
 }
 

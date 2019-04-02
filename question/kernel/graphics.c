@@ -158,17 +158,15 @@ void drawBox(uint16_t grid[ 600 ][ 800 ],int x,int y,int l){
     drawLine(grid,x,y+l,x+l,y+l,0x7FFF);
 }
 void drawChar(uint16_t grid[ 600 ][ 800 ],unsigned char c,int xOffset,int yOffset,uint16_t rgb){
+    int cx,cy;
+	int mask[8]={1,2,4,8,16,32,64,128};
     unsigned char letter[8];
     strcpy(letter,font8x8_basic[c]);
-    for(int i = 0; i < 8; i++){
-        char r = letter[i];
-        int shiftValue = 7;
-        for(int j = 0; j < 8; j++){
-            int i = (r >>shiftValue) & 0x1;
-            if(i = 1){//put character
-                grid[xOffset + i][yOffset + j] = rgb
+	for(cx=0;cx<8;cx++){
+		for(cy=0;cy<8;cy++){
+			if(letter[cx]&mask[cy]){
+                grid[xOffset + cx][yOffset + cy - 12] = rgb;
             }
-            shiftValue--;
-        }
-    }
+		}
+	}
 }
