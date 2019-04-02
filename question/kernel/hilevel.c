@@ -10,6 +10,7 @@
 
 #include "hilevel.h"
 #define waitNo 25
+#define WHITE 0x7FFF
 pcb_t* current = NULL;
 pcb_t pcb[50];
 waitingProcess waiting[waitNo];
@@ -217,7 +218,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     configDisplay();
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
-    drawChar(grid,'B',300,400,0x7FFF);
+    drawString(grid,"QEMU",0,200,10,WHITE);
     return;
 }
 
