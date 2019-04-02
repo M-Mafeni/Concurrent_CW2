@@ -13,7 +13,7 @@
 #define WHITE 0x7FFF
 #define RED 0x001F
 #define GREEN 0x03E0
-#define BLUE 0x7COO
+#define BLUE 0x7C00
 pcb_t* current = NULL;
 pcb_t pcb[50];
 waitingProcess waiting[waitNo];
@@ -221,8 +221,13 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     configDisplay();
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
-    drawString(grid,"QEMU",0,150,10,WHITE);
-    drawString(grid,"P RESS A TO RUN P3",100,100,2,RED);
+    drawString(grid,"QEMU",0,250,10,WHITE);
+    drawString(grid,"PRESS A TO RUN P3",120,250,2,RED);
+    drawString(grid,"PRESS B TO RUN P4",150,250,2,RED);
+    drawString(grid,"PRESS C TO RUN P5",180,250,2,RED);
+    drawRectangle(grid,400,30,80,140,BLUE);
+    drawRectangle(grid,400,250,80,140,BLUE);
+    drawRectangle(grid,400,470,80,140,BLUE);
     return;
 }
 

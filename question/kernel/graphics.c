@@ -151,6 +151,13 @@ void drawSquare(uint16_t grid[ 600 ][ 800 ],int x,int y,int l,int rgb){
     }
     return;
 }
+void drawRectangle(uint16_t grid[ 600 ][ 800 ],int x,int y,int l,int m,int rgb){
+    for(int i = x; i < x + l; i++){
+        for(int j = y; j < y + m; j++){
+            grid[i][j] = rgb;
+        }
+    }
+}
 void drawBox(uint16_t grid[ 600 ][ 800 ],int x,int y,int l){
     drawLine(grid,x,y,x+l,y,0x7FFF);
     drawLine(grid,x,y,x,y+l,0x7FFF);
