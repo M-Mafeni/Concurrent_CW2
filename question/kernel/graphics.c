@@ -143,10 +143,10 @@ void drawLine(uint16_t grid[ 600 ][ 800 ],int x1,int y1,int x2, int y2,uint16_t 
     }
     return;
 }
-void drawSquare(uint16_t grid[ 600 ][ 800 ],int x,int y,int l){
+void drawSquare(uint16_t grid[ 600 ][ 800 ],int x,int y,int l,int rgb){
     for(int i = x; i < x + l; i++){
         for(int j = y; j < y + l; j++){
-            grid[i][j] = 0x7FFF;
+            grid[i][j] = rgb;
         }
     }
     return;
@@ -161,8 +161,10 @@ void drawChar(uint16_t grid[ 600 ][ 800 ],unsigned char c,int xOffset,int yOffse
     int cx,cy;
     //mask used for bitwise and operation
 	int mask[8]={1,2,4,8,16,32,64,128};
-    unsigned char letter[8];
-    strcpy(letter,font8x8_basic[c]);
+    unsigned char letter[8] = {0,0,0,0,0,0,0,0};
+    if(c != ' '){
+        strcpy(letter,font8x8_basic[c]);
+    }
 	for(cx=0;cx<8 * scale;cx++){
         int a = cx / scale;
 		for(cy=0;cy<8 * scale ;cy++){
@@ -173,9 +175,10 @@ void drawChar(uint16_t grid[ 600 ][ 800 ],unsigned char c,int xOffset,int yOffse
 		}
 	}
 }
+//can only print capital letters
 void drawString(uint16_t grid[ 600 ][ 800 ],char* s,int x,int y,int scale,int rgb){
     int n = strlen(s);
     for(int i = 0; i < n; i++){
-        drawChar(grid,*s++,x,y + i * 8 * scale,scale,rgb);
+        drawChar(grid,*(s + i),x,y + i * 8 * scale,scale,rgb);
     }
 }

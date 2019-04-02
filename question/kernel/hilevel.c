@@ -11,6 +11,9 @@
 #include "hilevel.h"
 #define waitNo 25
 #define WHITE 0x7FFF
+#define RED 0x001F
+#define GREEN 0x03E0
+#define BLUE 0x7COO
 pcb_t* current = NULL;
 pcb_t pcb[50];
 waitingProcess waiting[waitNo];
@@ -218,7 +221,8 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     configDisplay();
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
-    drawString(grid,"QEMU",0,200,10,WHITE);
+    drawString(grid,"QEMU",0,150,10,WHITE);
+    drawString(grid,"P RESS A TO RUN P3",100,100,2,RED);
     return;
 }
 
