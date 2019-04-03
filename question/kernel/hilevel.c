@@ -95,6 +95,10 @@ int getUniqueId(){
 
 extern void     main_console();
 extern uint32_t tos_console;
+extern void main_P3();
+extern void main_P4();
+extern void main_P5();
+extern void main_philosopher();
 
 void create_new_process(ctx_t* ctx){
     int id = getUniqueId();
@@ -122,8 +126,7 @@ void create_new_process(ctx_t* ctx){
         child.ctx.sp = topOfNewProcess - offset;
         child.ctx.lr = ctx->lr;
         //put in return values
-        child.ctx.gpr[0] = 0;
-        ctx->gpr[0] = child.pid;
+
         //put process in queue
         pcb[child.pid] = child;
 
@@ -283,6 +286,12 @@ void moveMouse(int xOffset, int yOffset){
     drawSquare(grid,cursorPosition[0],cursorPosition[1],CURSOR_SIZE,WHITE);
 }
 
+void addProcessFromGUI(uint32_t address,ctx_t*ctx){
+    int id = getUniqueId();
+    create_new_process(ctx);
+    pcb[id].ctx.pc = address;
+}
+
 void hilevel_handler_irq(ctx_t* ctx) {
     // Step 2: read  the interrupt identifier so we know the source.
 
@@ -296,7 +305,28 @@ void hilevel_handler_irq(ctx_t* ctx) {
    // char scanCode = ( x >> 4 ) & 0xF;
    char scanCode = x;
    char key = decodeKeyPress(scanCode);
-   PL011_putc(UART0,key,true);
+   // PL011_putc(UART0,key,true);
+   switch(key){
+       case 'A':{ //execute P3
+           addProcessFromGUI((uint32_t) &main_P3,ctx);
+           break;
+       }
+       case 'S':{ //execute P4
+           addProcessFromGUI((uint32_t) &main_P4,ctx);
+           break;
+       }
+       case 'D':{ //execute P5
+           addProcessFromGUI((uint32_t) &main_P5,ctx);
+           break;
+       }
+       case 'F':{ //execute philosopher
+           addProcessFromGUI((uint32_t) &main_philosopher,ctx);
+           break;
+       }
+       default:{
+           break;
+       }
+   }
 
    // PL011_putc( UART0, '0',                      true );
    // PL011_putc( UART0, '<',                      true );
@@ -341,7 +371,10 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         }
         case 0x03 : { //fork call
             PL011_putc(UART0, 'F', true);
+            int child = getUniqueId();
             create_new_process(ctx);
+            pcb[child].ctx.gpr[0] = 0;
+            ctx->gpr[0] = child;
             break;
         }
         case 0x04 : {  //exit call
