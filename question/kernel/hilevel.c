@@ -6,7 +6,6 @@
  */
 //TODO work on cursor
 //TODO show state of programs
-//TODO make kill-all function
 
 
 #include "hilevel.h"
@@ -232,6 +231,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     drawString(grid,"PRESS S TO RUN P4",150,250,2,RED);
     drawString(grid,"PRESS D TO RUN P5",180,250,2,RED);
     drawString(grid,"PRESS F TO RUN PHILOSOPHER",210,250,2,RED);
+    drawString(grid,"PRESS K TO KILL ALL PROGRAMS",240,250,2,RED);
     //create buttons
     drawRectangle(grid,400,30,80,140,BLUE);
     drawRectangle(grid,400,250,80,140,BLUE);
@@ -294,6 +294,13 @@ void addProcessFromGUI(uint32_t address,ctx_t*ctx){
     create_new_process(ctx);
     pcb[id].ctx.pc = address;
 }
+void kill_all_programs(){
+    int i = 1;
+    while(pcb[i].pid != -1){
+        pcb[i].status = STATUS_TERMINATED;
+        i++;
+    }
+}
 
 void hilevel_handler_irq(ctx_t* ctx) {
     // Step 2: read  the interrupt identifier so we know the source.
@@ -324,6 +331,10 @@ void hilevel_handler_irq(ctx_t* ctx) {
        }
        case 'F':{ //execute philosopher
            addProcessFromGUI((uint32_t) &main_philosopher,ctx);
+           break;
+       }
+       case 'K':{//kill all programs
+           kill_all_programs();
            break;
        }
        default:{
@@ -418,20 +429,18 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
                     if(waiting[i].pid == -1){
                         waiting[i].pid = current->pid;
                         waiting[i].semaphore = val;
-                        schedule_priority(ctx);
                         break;
                     }
                 }
             }else{
                 *val = 1; //resource is now in use
+                schedule_priority(ctx);
             }
             break;
         }
         case 0x10:{ //sem post
             sem_t* val = (sem_t*)(ctx->gpr[0]);
             *val = 0; //resource is now available for use
-            // checkAvailable();
-            // schedule_priority(ctx);
             break;
         }
         case 0x0A:{ //sem destroy

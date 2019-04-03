@@ -8,6 +8,8 @@ char decodeKeyPress(unsigned char scanCode){
             return 'D';
         case 0x21: //F pressed
             return 'F';
+        case 0x25: //K pressed
+            return 'K';
         default:
             return ' ';
     }
