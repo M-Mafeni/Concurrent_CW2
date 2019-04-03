@@ -32,6 +32,7 @@
 #include "lolevel.h"
 #include     "int.h"
 #include "graphics.h"
+#include "decoder.h"
 
 //struct for Process Control Block
 typedef int pid_t;

@@ -15,7 +15,7 @@
 #define GREEN 0x03E0
 #define BLUE 0x7C00
 #define BLACK 0x000
-// #define CURSOR_SIZE 15
+#define CURSOR_SIZE 15
 pcb_t* current = NULL;
 pcb_t pcb[50];
 int cursorPosition[2] = {300,400};
@@ -238,7 +238,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     drawString(grid,"P5",420,500,5,BLACK);
     drawString(grid,"PHILOSOPHER",420,720,1,BLACK);
     //initialise cursor
-    drawCircle(grid,cursorPosition[0],cursorPosition[1],15,WHITE);
+    drawSquare(grid,cursorPosition[0],cursorPosition[1],CURSOR_SIZE,WHITE);
     dispatch( ctx, NULL, &pcb[0] );
     int_enable_irq();
     return;
@@ -275,7 +275,12 @@ void moveMouse(int xOffset, int yOffset){
     int prevPosition[2];
     memcpy(&prevPosition,&cursorPosition,sizeof(cursorPosition));
     //delete square at prev position by filling it with black
-    // drawSquare(grid,prevPosition[0],prevPosition[1])
+    drawSquare(grid,prevPosition[0],prevPosition[1],CURSOR_SIZE,0);
+    //update position
+    cursorPosition[0] += xOffset;
+    cursorPosition[1] += yOffset;
+    //create square at new position
+    drawSquare(grid,cursorPosition[0],cursorPosition[1],CURSOR_SIZE,WHITE);
 }
 
 void hilevel_handler_irq(ctx_t* ctx) {
@@ -288,21 +293,25 @@ void hilevel_handler_irq(ctx_t* ctx) {
 
   if     ( id == GIC_SOURCE_PS20 ) { //keyboard interrupt
    uint8_t x = PL050_getc( PS20 );
+   // char scanCode = ( x >> 4 ) & 0xF;
+   char scanCode = x;
+   char key = decodeKeyPress(scanCode);
+   PL011_putc(UART0,key,true);
 
-   PL011_putc( UART0, '0',                      true );
-   PL011_putc( UART0, '<',                      true );
-   PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true );
-   PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
-   PL011_putc( UART0, '>',                      true );
+   // PL011_putc( UART0, '0',                      true );
+   // PL011_putc( UART0, '<',                      true );
+   // PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true );
+   // PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
+   // PL011_putc( UART0, '>',                      true );
  }
  else if( id == GIC_SOURCE_PS21 ) { //mouse interrupt
    uint8_t x = PL050_getc( PS21 );
 
-   PL011_putc( UART0, '1',                      true );
-   PL011_putc( UART0, '<',                      true );
-   PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true );
-   PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
-   PL011_putc( UART0, '>',                      true );
+   // PL011_putc( UART0, '1',                      true );
+   // PL011_putc( UART0, '<',                      true );
+   // PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); //
+   // PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
+   // PL011_putc( UART0, '>',                      true );
 }
 if( id == GIC_SOURCE_TIMER0 ) {
     checkAvailable();awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;

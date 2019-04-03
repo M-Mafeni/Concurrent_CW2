@@ -4,7 +4,7 @@
 /*given the PS2 byte information should return the ascii code of the
 key that was pressed
 */
-extern char decodeKeyPress();
+extern char decodeKeyPress(unsigned char scanCode);
 
 extern int getXposition();
 extern int getYposition();
