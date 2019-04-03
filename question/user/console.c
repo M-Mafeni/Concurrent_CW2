@@ -107,6 +107,11 @@ void main_console() {
 
       kill( pid, s );
     }
+    else if(0 == strcmp(p,"kill-all")){
+        for(int i = 1; i < 50;i++){
+            kill(i,SIG_QUIT);
+        }
+    }
     else {
       puts( "unknown command\n", 16 );
     }

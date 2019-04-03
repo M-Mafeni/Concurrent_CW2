@@ -4,8 +4,9 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
- //TODO make main menu
- //TODO get it to display fonts
+//TODO work on cursor
+//TODO show state of programs
+//TODO make kill-all function
 
 
 #include "hilevel.h"
@@ -253,10 +254,12 @@ void checkAvailable(){
         waitingProcess w = waiting[i];
         pcb[w.pid].priority += pcb[w.pid].priority_change * 2;
         if((w.semaphore) != NULL && *(w.semaphore) == 0){
-            pcb[w.pid].status = STATUS_READY;
-            //remove from queue
-            w.pid = -1;
-            w.semaphore = NULL;
+            if(!is_terminated(pcb[w.pid])){
+                pcb[w.pid].status = STATUS_READY;
+                //remove from queue
+                w.pid = -1;
+                w.semaphore = NULL;
+            }
         }
     }
 }
@@ -267,7 +270,7 @@ void awaken(){
         if(pcb[i].waitingTime > 0){
             pcb[i].waitingTime -= 1;
             pcb[i].priority += pcb[i].priority_change * 2;
-            if(pcb[i].waitingTime == 0){
+            if(pcb[i].waitingTime == 0 && !is_terminated(pcb[i])){
                 pcb[i].status = STATUS_READY;
             }
         }
