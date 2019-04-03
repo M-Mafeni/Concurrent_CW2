@@ -14,8 +14,11 @@
 #define RED 0x001F
 #define GREEN 0x03E0
 #define BLUE 0x7C00
+#define BLACK 0x000
+// #define CURSOR_SIZE 15
 pcb_t* current = NULL;
 pcb_t pcb[50];
+int cursorPosition[2] = {300,400};
 waitingProcess waiting[waitNo];
 //grid used for display
 uint16_t grid[ 600 ][ 800 ];
@@ -219,15 +222,25 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     GICC0->CTLR         = 0x00000001; // enable GIC interface
     GICD0->CTLR         = 0x00000001; // enable GIC distributor
     configDisplay();
-    dispatch( ctx, NULL, &pcb[0] );
-    int_enable_irq();
+
     drawString(grid,"QEMU",0,250,10,WHITE);
     drawString(grid,"PRESS A TO RUN P3",120,250,2,RED);
-    drawString(grid,"PRESS B TO RUN P4",150,250,2,RED);
-    drawString(grid,"PRESS C TO RUN P5",180,250,2,RED);
+    drawString(grid,"PRESS S TO RUN P4",150,250,2,RED);
+    drawString(grid,"PRESS D TO RUN P5",180,250,2,RED);
+    drawString(grid,"PRESS F TO RUN PHILOSOPHER",210,250,2,RED);
+    //create buttons
     drawRectangle(grid,400,30,80,140,BLUE);
     drawRectangle(grid,400,250,80,140,BLUE);
     drawRectangle(grid,400,470,80,140,BLUE);
+    drawRectangle(grid,400,690,80,140,BLUE);
+    drawString(grid,"P3",420,60,5,BLACK);
+    drawString(grid,"P4",420,280,5,BLACK);
+    drawString(grid,"P5",420,500,5,BLACK);
+    drawString(grid,"PHILOSOPHER",420,720,1,BLACK);
+    //initialise cursor
+    drawCircle(grid,cursorPosition[0],cursorPosition[1],15,WHITE);
+    dispatch( ctx, NULL, &pcb[0] );
+    int_enable_irq();
     return;
 }
 
@@ -257,7 +270,13 @@ void awaken(){
         }
     }
 }
-
+//moves mouse based on offset values
+void moveMouse(int xOffset, int yOffset){
+    int prevPosition[2];
+    memcpy(&prevPosition,&cursorPosition,sizeof(cursorPosition));
+    //delete square at prev position by filling it with black
+    // drawSquare(grid,prevPosition[0],prevPosition[1])
+}
 
 void hilevel_handler_irq(ctx_t* ctx) {
     // Step 2: read  the interrupt identifier so we know the source.

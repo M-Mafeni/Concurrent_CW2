@@ -1,4 +1,5 @@
 #include "graphics.h"
+//font bitmap gotten from https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h
 char font8x8_basic[128][8] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0000 (nul)
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0001
@@ -142,6 +143,14 @@ void drawLine(uint16_t grid[ 600 ][ 800 ],int x1,int y1,int x2, int y2,uint16_t 
         }
     }
     return;
+}
+//creates line circles
+void drawCircle(uint16_t grid[ 600 ][ 800 ],int x,int y,int r,int rgb){
+    for(double i = 0; i <= 2* M_PI; i+= M_PI/50){
+        int xCoor = r * cos(i) + x;
+        int yCoor = r * sin(i) + y;
+        grid[xCoor][yCoor] = rgb;
+    }
 }
 void drawSquare(uint16_t grid[ 600 ][ 800 ],int x,int y,int l,int rgb){
     for(int i = x; i < x + l; i++){
