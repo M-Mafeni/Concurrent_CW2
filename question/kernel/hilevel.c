@@ -17,10 +17,10 @@
 #define CURSOR_SIZE 15
 pcb_t* current = NULL;
 pcb_t pcb[50];
-int cursorPosition[2] = {300,400};
+int cursorPosition[2] = {DISPLAY_HEIGHT/2,DISPLAY_WIDTH/2};
 waitingProcess waiting[waitNo];
 //grid used for display
-uint16_t grid[ 600 ][ 800 ];
+uint16_t grid[ DISPLAY_HEIGHT ][ DISPLAY_WIDTH ];
 /*array stores the stack pointers for the processes for
 better memory allocation*/
 uint32_t topOfProcesses[50];
@@ -287,10 +287,10 @@ void moveMouse(int xOffset, int yOffset){
         }
     }
     // update position
-    if(cursorPosition[0] + xOffset >= 0 && cursorPosition[0] + xOffset <= 600 - CURSOR_SIZE){ //in x range
+    if(cursorPosition[0] + xOffset >= 0 && cursorPosition[0] + xOffset <= DISPLAY_HEIGHT - CURSOR_SIZE){ //in x range
         cursorPosition[0] += xOffset;
     }
-    if(cursorPosition[1] + yOffset >= 0 && cursorPosition[1] + yOffset <= 800 - CURSOR_SIZE){ //in y range
+    if(cursorPosition[1] + yOffset >= 0 && cursorPosition[1] + yOffset <= DISPLAY_WIDTH - CURSOR_SIZE){ //in y range
         cursorPosition[1] += yOffset;
     }    //create square at new position
     //preserve color of location about to be travelled
