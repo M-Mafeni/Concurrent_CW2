@@ -181,7 +181,7 @@ void configDisplay(){
     GICC0->CTLR        = 0x00000001; // enable GIC interface
     GICD0->CTLR        = 0x00000001; // enable GIC distributor
 }
-
+int colorMap[CURSOR_SIZE][CURSOR_SIZE];
 void hilevel_handler_rst( ctx_t* ctx              ) {
     /* Initialises PCBs, representing user processes stemming from execution
     * of user programs.  Note in each case that
@@ -225,7 +225,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     GICC0->CTLR         = 0x00000001; // enable GIC interface
     GICD0->CTLR         = 0x00000001; // enable GIC distributor
     configDisplay();
-
+    memset(&colorMap,0,sizeof(colorMap) * sizeof(colorMap[0]));
     drawString(grid,"QEMU",0,250,10,WHITE);
     drawString(grid,"PRESS A TO RUN P3",120,250,2,RED);
     drawString(grid,"PRESS S TO RUN P4",150,250,2,RED);
@@ -280,17 +280,25 @@ void awaken(){
 void moveMouse(int xOffset, int yOffset){
     int prevPosition[2];
     memcpy(&prevPosition,&cursorPosition,sizeof(cursorPosition));
-    //delete square at prev position by filling it with black
-    drawSquare(grid,prevPosition[0],prevPosition[1],CURSOR_SIZE,0);
+    //replace square with colours that were there before
+    for(int i = 0; i < CURSOR_SIZE;i++ ){
+        for(int j = 0; j < CURSOR_SIZE; j++){
+             grid[cursorPosition[0] + i][cursorPosition[1] + j] = colorMap[i][j];
+        }
+    }
     // update position
-    if(cursorPosition[0] + xOffset >= 0 && cursorPosition[0] + xOffset <= 585){ //in x range
+    if(cursorPosition[0] + xOffset >= 0 && cursorPosition[0] + xOffset <= 600 - CURSOR_SIZE){ //in x range
         cursorPosition[0] += xOffset;
     }
-    if(cursorPosition[1] + yOffset >= 0 && cursorPosition[1] + yOffset <= 785){ //in y range
+    if(cursorPosition[1] + yOffset >= 0 && cursorPosition[1] + yOffset <= 800 - CURSOR_SIZE){ //in y range
         cursorPosition[1] += yOffset;
     }    //create square at new position
-    // cursorPosition[0] += xOffset;
-    // cursorPosition[1] += yOffset;
+    //preserve color of location about to be travelled
+    for(int i = 0; i < CURSOR_SIZE;i++ ){
+        for(int j = 0; j < CURSOR_SIZE; j++){
+            colorMap[i][j] = grid[cursorPosition[0] + i][cursorPosition[1] + j];
+        }
+    }
     drawSquare(grid,cursorPosition[0],cursorPosition[1],CURSOR_SIZE,WHITE);
 }
 
