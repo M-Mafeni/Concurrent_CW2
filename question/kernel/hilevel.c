@@ -135,6 +135,7 @@ void create_new_process(ctx_t* ctx){
 }
 void exec_program(ctx_t* ctx,uint32_t address){
     ctx->pc = address;
+    ctx->cpsr = 0X50;
     dispatch(ctx,current,current);
     return;
 }
@@ -383,11 +384,11 @@ void hilevel_handler_irq(ctx_t* ctx) {
        }
        //move mouse here
    }
-   PL011_putc( UART0, '1',                      true );
-   PL011_putc( UART0, '<',                      true );
-   PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); //
-   PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
-   PL011_putc( UART0, '>',                      true );
+   // PL011_putc( UART0, '1',                      true );
+   // PL011_putc( UART0, '<',                      true );
+   // PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); //
+   // PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
+   // PL011_putc( UART0, '>',                      true );
 }
 
 
