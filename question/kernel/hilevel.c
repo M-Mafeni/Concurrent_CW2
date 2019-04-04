@@ -4,7 +4,7 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
-
+//TODO make clicking the logo change the color
 
 #include "hilevel.h"
 #define waitNo 25
@@ -196,6 +196,13 @@ void drawState(){
         shift += 220;
     }
 }
+int logoColours[4] = {WHITE,RED,GREEN,BLUE};
+int logoIndex = 0;
+void drawLogo() {
+    drawRectangle(grid,0,250,80,240,BLACK);
+    //logo region = (0,250) ->(80,590)
+    drawString(grid,"QEMU",0,250,10,logoColours[logoIndex]);
+}
 void hilevel_handler_rst( ctx_t* ctx              ) {
     /* Initialises PCBs, representing user processes stemming from execution
     * of user programs.  Note in each case that
@@ -240,7 +247,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     GICD0->CTLR         = 0x00000001; // enable GIC distributor
     configDisplay();
     memset(&colorMap,0,sizeof(colorMap) * sizeof(colorMap[0]));
-    drawString(grid,"QEMU",0,250,10,WHITE);
+    drawLogo();
     drawString(grid,"PRESS A TO RUN P3",120,250,2,RED);
     drawString(grid,"PRESS S TO RUN P4",150,250,2,RED);
     drawString(grid,"PRESS D TO RUN P5",180,250,2,RED);
@@ -338,7 +345,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
   if ( id == GIC_SOURCE_TIMER0 ) {
-      drawState();checkAvailable();awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
+      checkAvailable();awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
     }
   else if ( id == GIC_SOURCE_PS20 ) { //keyboard interrupt
    uint8_t x = PL050_getc( PS20 );
@@ -376,7 +383,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
            break;
        }
    }
-
+   drawState();
    // PL011_putc( UART0, '0',                      true );
    // PL011_putc( UART0, '<',                      true );
    // PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true );
@@ -388,6 +395,17 @@ void hilevel_handler_irq(ctx_t* ctx) {
    if(!bytesReceived[0]){ //1st byte has not been received
        bytesReceived[0] = true;
        bytes[0] = x;
+       //logo region = (0,250) ->(80,590)
+       unsigned char buttonClicked = bytes[0] & 0x1;
+       if(buttonClicked){
+           bool inXRegion = (cursorPosition[0] <= 80);
+           bool inYRegion = (cursorPosition[1] >= 250 && cursorPosition[1] <= 590);
+           if(inXRegion && inYRegion){
+               logoIndex = (logoIndex + 1) % 4;
+               drawLogo();
+           }
+           bytes[0] = 0;
+       }
    }else if(!bytesReceived[1]){ //x byte has not been received
        bytesReceived[1] = true;
        bytes[1] = x;
