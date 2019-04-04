@@ -4,6 +4,11 @@ void printf(char* string){
     write(STDOUT_FILENO,string,strlen(string));
 }
 
+void concatAndPrint(char* s,char* id,char* data){
+    strcpy(s,id);
+    strcat(s,data);
+    printf(s);
+}
 void main_philosopher(){
     sem_t* chopsticks[16];
     for(int i = 0; i < 16; i++){
@@ -19,22 +24,24 @@ void main_philosopher(){
                 char philosopher[16] = "philosopher ";
                 strcat(philosopher,id);
                 char waiting[50];
-                strcpy(waiting,philosopher);
-                strcat(waiting," is thinking\n");
-                printf(waiting);
+                concatAndPrint(waiting,philosopher," is thinking\n");
                 sem_wait((sem_t*)(&tos_sharedMem + i));
+                char pickupLeft[50];
+                concatAndPrint(pickupLeft,philosopher," picked up left fork\n");
                 sem_wait((sem_t*)(&tos_sharedMem + ((i + 1) % 16)));
+                char pickupRight[50];
+                concatAndPrint(pickupRight,philosopher," picked up right fork\n");
                 char eating[50];
-                strcpy(eating,philosopher);
-                strcat(eating," is eating\n");
-                printf(eating);
+                concatAndPrint(eating,philosopher," is eating\n");
                 sem_post((sem_t*)(&tos_sharedMem + i));
+                char putDownLeft[50];
+                concatAndPrint(putDownLeft,philosopher," puts down left fork\n");
                 sem_post((sem_t*)(&tos_sharedMem + ((i + 1) % 16)));
+                char putDownRight[50];
+                concatAndPrint(putDownRight,philosopher," puts down right fork\n");
                 char finished[60];
-                strcpy(finished,philosopher);
-                strcat(finished," has finished eating\n");
+                concatAndPrint(finished,philosopher," has finished eating\n");
                 sleep(3);
-                printf(finished);
             }
             exit(EXIT_SUCCESS);
         }else{

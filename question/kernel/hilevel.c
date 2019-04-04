@@ -4,7 +4,6 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
-//TODO work on cursor
 //TODO show state of programs
 
 
@@ -472,6 +471,7 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
         case 0x10:{ //sem post
             sem_t* val = (sem_t*)(ctx->gpr[0]);
             *val = 0; //resource is now available for use
+            // checkAvailable();
             break;
         }
         case 0x0A:{ //sem destroy
