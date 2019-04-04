@@ -4,7 +4,6 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
-//TODO show state of programs
 
 
 #include "hilevel.h"
@@ -182,6 +181,21 @@ void configDisplay(){
     GICD0->CTLR        = 0x00000001; // enable GIC distributor
 }
 int colorMap[CURSOR_SIZE][CURSOR_SIZE];
+//shows the state of the programs executed from GUI
+unsigned char state = 0x0000; //programs start off not running
+void drawState(){
+    int shift = 0;
+    char* string;
+    for(int i = 3; i >= 0; i--){
+        int progState = (state >> i) & 0x1;
+        string = (progState) ? "RUNNING" : "NOT RUNNING";
+        int colour = (progState) ? GREEN : RED;
+        //reset state that was there before
+        drawRectangle(grid,460,40 + shift,20,100,BLUE);
+        drawString(grid,string,460,60 + shift,1,colour);
+        shift += 220;
+    }
+}
 void hilevel_handler_rst( ctx_t* ctx              ) {
     /* Initialises PCBs, representing user processes stemming from execution
     * of user programs.  Note in each case that
@@ -241,6 +255,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     drawString(grid,"P4",420,280,5,BLACK);
     drawString(grid,"P5",420,500,5,BLACK);
     drawString(grid,"PHILOSOPHER",420,720,1,BLACK);
+    drawState();
     //initialise cursor
     drawSquare(grid,cursorPosition[0],cursorPosition[1],CURSOR_SIZE,WHITE);
     dispatch( ctx, NULL, &pcb[0] );
@@ -323,7 +338,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
   if ( id == GIC_SOURCE_TIMER0 ) {
-      checkAvailable();awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
+      drawState();checkAvailable();awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
     }
   else if ( id == GIC_SOURCE_PS20 ) { //keyboard interrupt
    uint8_t x = PL050_getc( PS20 );
@@ -334,22 +349,27 @@ void hilevel_handler_irq(ctx_t* ctx) {
    switch(key){
        case 'A':{ //execute P3
            addProcessFromGUI((uint32_t) &main_P3,ctx);
+           state = state | 0x8;
            break;
        }
        case 'S':{ //execute P4
            addProcessFromGUI((uint32_t) &main_P4,ctx);
+           state = state | 0x4;
            break;
        }
        case 'D':{ //execute P5
            addProcessFromGUI((uint32_t) &main_P5,ctx);
+           state = state | 0x2;
            break;
        }
        case 'F':{ //execute philosopher
            addProcessFromGUI((uint32_t) &main_philosopher,ctx);
+           state = state | 0x1;
            break;
        }
        case 'K':{//kill all programs
            kill_all_programs();
+           state = 0;
            break;
        }
        default:{
