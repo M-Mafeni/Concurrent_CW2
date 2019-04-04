@@ -12,13 +12,13 @@
  * carriage return character has been read, or a limit is reached).
  */
 
-void puts( char* x, int n ) {
+void puts2( char* x, int n ) {
   for( int i = 0; i < n; i++ ) {
     PL011_putc( UART1, x[ i ], true );
   }
 }
 
-void gets( char* x, int n ) {
+void gets2( char* x, int n ) {
   for( int i = 0; i < n; i++ ) {
     x[ i ] = PL011_getc( UART1, true );
 
@@ -37,8 +37,9 @@ void gets( char* x, int n ) {
 extern void main_P3();
 extern void main_P4();
 extern void main_P5();
+extern void main_philosopher();
 
-void* load( char* x ) {
+void* load2( char* x ) {
   if     ( 0 == strcmp( x, "P3" ) ) {
     return &main_P3;
   }
@@ -47,6 +48,9 @@ void* load( char* x ) {
   }
   else if( 0 == strcmp( x, "P5" ) ) {
     return &main_P5;
+  }
+  else if(0 == strcmp(x,"philosopher")){
+      return &main_philosopher;
   }
 
   return NULL;
@@ -84,17 +88,17 @@ void* load( char* x ) {
  *    would terminate the process whose PID is 3.
  */
 
-void main_console() {
+void main_console2() {
   char* p, x[ 1024 ];
 
   while( 1 ) {
-    puts( "shell$ ", 7 ); gets( x, 1024 ); p = strtok( x, " " );
+    puts2( "shell$ ", 7 ); gets2( x, 1024 ); p = strtok( x, " " );
 
     if     ( 0 == strcmp( p, "execute"   ) ) {
       pid_t pid = fork();
 
       if( 0 == pid ) {
-        exec( load( strtok( NULL, " " ) ) );
+        exec( load2( strtok( NULL, " " ) ) );
       }
     }
     else if( 0 == strcmp( p, "terminate" ) ) {
@@ -103,8 +107,13 @@ void main_console() {
 
       kill( pid, s );
     }
+    else if(0 == strcmp(p,"kill-all")){
+        for(int i = 1; i < 50;i++){
+            kill(i,SIG_QUIT);
+        }
+    }
     else {
-      puts( "unknown command\n", 16 );
+      puts2( "unknown command\n", 16 );
     }
   }
 

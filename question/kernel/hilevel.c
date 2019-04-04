@@ -4,7 +4,6 @@
  * which can be found via http://creativecommons.org (and should be included as
  * LICENSE.txt within the associated archive or repository).
  */
-//TODO make clicking the logo change the color
 
 #include "hilevel.h"
 #define waitNo 25
@@ -91,7 +90,7 @@ int getUniqueId(){
     return -1;
 }
 
-extern void     main_console();
+extern void     main_console2();
 extern uint32_t tos_console;
 extern void main_P3();
 extern void main_P4();
@@ -227,7 +226,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     console.pid = 0;
     console.status   = STATUS_CREATED;
     console.ctx.cpsr = 0x50;
-    console.ctx.pc   = ( uint32_t )( &main_console );
+    console.ctx.pc   = ( uint32_t )( &main_console2 );
     console.ctx.sp   = ( uint32_t )( &tos_console  );
     console.priority_change = 1;
     console.priority = 30;
