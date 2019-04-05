@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [54] hours
+effort : [57] hours
 
 -------------------------------------------------------------------------------
 
@@ -28,7 +28,8 @@ by the assignment description of course).  Let us know what third-party
 source code or resources you used (if any) so it's clear what's your work
 and what isn't:
 
-[font bitmap was gotten from https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h]
+[font bitmap was gotten from https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h
+drawChar algorithm was based on the one found here: https://wiki.osdev.org/VGA_Fonts ]
 
 -------------------------------------------------------------------------------
 
@@ -49,12 +50,12 @@ are not (necessarily) detailed explicitly.
 
     Stage 2 : closed generalisations and enhancements
 [X]           - fork, exec and exit system calls                     ( 15%)
-[*]           - Inter-Process Communication (IPC)                    ( 15%)
+[X]           - Inter-Process Communication (IPC)                    ( 15%)
 
     Stage 3 : open   generalisations and enhancements                ( 30%)
 [?]           - MMU-based protection and virtualisation
                 *OR*
-[?]           - LCD screen and PS/2 device drivers and GUI
+[X]           - LCD screen and PS/2 device drivers and GUI
                 *OR*
 [?]           - file system based on simplified, emulated disk
                 *OR*
@@ -71,8 +72,12 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-[I used semaphores to tackle the dining philosophers problem. The problem with this is that it is very special purpose
- There is also no memory protection which makes initialising shared memory easier but could be a potential problem for more complex programs
- ]
+[For the priority-based scheduler, I used an ageing technique to avoid starvation. Processes not currently running have their priority values increased. This is very useful as it avoids the problem
+of a high-priority task taking up too much time. However, there is the slight possibility of an overflow error as I am only adding to the priority.
+I used semaphores to tackle the dining philosophers problem. This helps to achieve mutual exclusion as the semaphore values acts as a lock only allowing 1 philosopher at a time.
+Starvation is also avoided as sem_post signals to the waiting philosophers that they have finished. However, there are a few caveats with this solution. Because I did not implement
+shm_open or mmap, my solution explicitly has to declare the chopsticks as a region in global memory (there is no memory protection so all the processes can access the same area in memory)
+I tackled implementing the GUI for stage 3. I parsed the bytes gotten from the interrupt signals in order to get the key presses as well at the x and y value offsets for the mouse.
+]
 
 -------------------------------------------------------------------------------
