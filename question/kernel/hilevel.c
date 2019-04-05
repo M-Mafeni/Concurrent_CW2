@@ -383,11 +383,6 @@ void hilevel_handler_irq(ctx_t* ctx) {
        }
    }
    drawState();
-   // PL011_putc( UART0, '0',                      true );
-   // PL011_putc( UART0, '<',                      true );
-   // PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true );
-   // PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
-   // PL011_putc( UART0, '>',                      true );
  }
  else if( id == GIC_SOURCE_PS21 ) { //mouse interrupt
    signed char x = PL050_getc( PS21 );
@@ -420,11 +415,6 @@ void hilevel_handler_irq(ctx_t* ctx) {
        }
        //move mouse here
    }
-   // PL011_putc( UART0, '1',                      true );
-   // PL011_putc( UART0, '<',                      true );
-   // PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); //
-   // PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true );
-   // PL011_putc( UART0, '>',                      true );
 }
 
 
@@ -485,24 +475,8 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             break;
         }
         case 0x09:{ //sem wait
-            //this should stop execution until semaphore values is availble
-            //i.e = 0
+            //this should stop execution until semaphore value is available i.e > 0
             sem_t* val = (sem_t*)(ctx->gpr[0]);
-            // if(*val == 1){ //not available
-            //     dispatch(ctx,current,current);
-            //     current->status = STATUS_WAITING;
-            //     //place entry in waiting queue
-            //     for(int i= 0; i < waitNo; i++){
-            //         if(waiting[i].pid == -1){
-            //             waiting[i].pid = current->pid;
-            //             waiting[i].semaphore = val;
-            //             break;
-            //         }
-            //     }
-            // }else{
-            //     *val = 1; //resource is now in use
-            //     schedule_priority(ctx);
-            // }
             if(*val <= 0){ // not available
                 dispatch(ctx,current,current);
                 current->status = STATUS_WAITING;

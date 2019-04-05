@@ -9,25 +9,14 @@ void concatAndPrint(char* s,char* id,char* data){
     strcat(s,data);
     printf(s);
 }
-int fib(int x){
-    if(x == 0) return 0;
-    if(x == 1) return 1;
-    else{
-        return fib(x-1) + fib(x-2);
-    }
-}
+
 void main_philosopher(){
-    int var[16];
-    sem_t *chopsticks[16];
+    int chopsticks[16];
     for(int i = 0; i < 16; i++){
-        var[i] = 1;
-        chopsticks[i] = &var[i];
-        // chopsticks[i] = (int) &x;
-        // sem_t * p = (sem_t *)chopsticks[i];
-        // *p = 1;
-        // memset(&chopsticks[i],0,sizeof(chopsticks[i]));
-        // sem_init(chopsticks[i],1);
+        chopsticks[i] = 1;        chopsticks[i] = &var[i];
+
     }
+    //could not implement mmap or shm_open so had to use this for semaphores
     memcpy(&tos_sharedMem,&var,sizeof(int) * 16);
     for(int i = 0; i < 16; i++){
         pid_t p = fork();
