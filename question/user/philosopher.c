@@ -9,12 +9,26 @@ void concatAndPrint(char* s,char* id,char* data){
     strcat(s,data);
     printf(s);
 }
-void main_philosopher(){
-    sem_t* chopsticks[16];
-    for(int i = 0; i < 16; i++){
-        *(chopsticks[i]) = 0;
+int fib(int x){
+    if(x == 0) return 0;
+    if(x == 1) return 1;
+    else{
+        return fib(x-1) + fib(x-2);
     }
-    memcpy(&tos_sharedMem,&chopsticks,sizeof(chopsticks));
+}
+void main_philosopher(){
+    int var[16];
+    sem_t *chopsticks[16];
+    for(int i = 0; i < 16; i++){
+        var[i] = 1;
+        chopsticks[i] = &var[i];
+        // chopsticks[i] = (int) &x;
+        // sem_t * p = (sem_t *)chopsticks[i];
+        // *p = 1;
+        // memset(&chopsticks[i],0,sizeof(chopsticks[i]));
+        // sem_init(chopsticks[i],1);
+    }
+    memcpy(&tos_sharedMem,&var,sizeof(int) * 16);
     for(int i = 0; i < 16; i++){
         pid_t p = fork();
         if(p == 0){
@@ -33,6 +47,7 @@ void main_philosopher(){
                 concatAndPrint(pickupRight,philosopher," picked up right fork\n");
                 char eating[50];
                 concatAndPrint(eating,philosopher," is eating\n");
+                sleep(4); //sleep is here to give some time for eating
                 sem_post((sem_t*)(&tos_sharedMem + i));
                 char putDownLeft[50];
                 concatAndPrint(putDownLeft,philosopher," puts down left fork\n");
@@ -41,7 +56,7 @@ void main_philosopher(){
                 concatAndPrint(putDownRight,philosopher," puts down right fork\n");
                 char finished[60];
                 concatAndPrint(finished,philosopher," has finished eating\n");
-                sleep(3);
+                sleep(4);
             }
             exit(EXIT_SUCCESS);
         }else{

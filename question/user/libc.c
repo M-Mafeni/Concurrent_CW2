@@ -147,8 +147,9 @@ void nice( int pid, int x ) {
 
   return;
 }
-void sem_init(sem_t* s){
-    *s = 0; //semaphore values should be initialised with 0
+void sem_init(sem_t* s,int value){
+    int x = value;
+    s = &x; //semaphore values should be initialised with value
     return;
 }
 void sem_wait(sem_t* s){
@@ -168,11 +169,12 @@ void sem_post(sem_t* s){
     return;
 }
 void sem_destroy(sem_t* s){
-    asm volatile("mov r0, %1 \n"
-                 "svc %0     \n"
-                 :
-                 : "I" (SEM_DESTROY), "r" (s)
-                 : "r0");
+    // asm volatile("mov r0, %1 \n"
+    //              "svc %0     \n"
+    //              :
+    //              : "I" (SEM_DESTROY), "r" (s)
+    //              : "r0");
+    s = NULL;
     return;
 }
 

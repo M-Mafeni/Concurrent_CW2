@@ -344,7 +344,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
   if ( id == GIC_SOURCE_TIMER0 ) {
-      checkAvailable();awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
+      awaken();schedule_priority(ctx); TIMER0->Timer1IntClr = 0x01;
     }
   else if ( id == GIC_SOURCE_PS20 ) { //keyboard interrupt
    uint8_t x = PL050_getc( PS20 );
@@ -488,7 +488,22 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
             //this should stop execution until semaphore values is availble
             //i.e = 0
             sem_t* val = (sem_t*)(ctx->gpr[0]);
-            if(*val == 1){ //not available
+            // if(*val == 1){ //not available
+            //     dispatch(ctx,current,current);
+            //     current->status = STATUS_WAITING;
+            //     //place entry in waiting queue
+            //     for(int i= 0; i < waitNo; i++){
+            //         if(waiting[i].pid == -1){
+            //             waiting[i].pid = current->pid;
+            //             waiting[i].semaphore = val;
+            //             break;
+            //         }
+            //     }
+            // }else{
+            //     *val = 1; //resource is now in use
+            //     schedule_priority(ctx);
+            // }
+            if(*val <= 0){ // not available
                 dispatch(ctx,current,current);
                 current->status = STATUS_WAITING;
                 //place entry in waiting queue
@@ -496,19 +511,19 @@ void hilevel_handler_svc(ctx_t* ctx,uint32_t id) {
                     if(waiting[i].pid == -1){
                         waiting[i].pid = current->pid;
                         waiting[i].semaphore = val;
+                        schedule_priority(ctx);
                         break;
                     }
                 }
             }else{
-                *val = 1; //resource is now in use
-                schedule_priority(ctx);
+                (*val)--;
             }
             break;
         }
         case 0x10:{ //sem post
             sem_t* val = (sem_t*)(ctx->gpr[0]);
-            *val = 0; //resource is now available for use
-            // checkAvailable();
+            (*val)++; //resource is now available for use
+            checkAvailable();
             break;
         }
         case 0x0A:{ //sem destroy
