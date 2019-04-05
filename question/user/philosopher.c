@@ -11,7 +11,7 @@ void concatAndPrint(char* s,char* id,char* data){
 }
 
 void main_philosopher(){
-    int chopsticks[16];
+    sem_t chopsticks[16];
     for(int i = 0; i < 16; i++){
         chopsticks[i] = 1;
     }
