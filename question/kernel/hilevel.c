@@ -90,7 +90,7 @@ int getUniqueId(){
     return -1;
 }
 
-extern void     main_console2();
+extern void     main_console();
 extern uint32_t tos_console;
 extern void main_P3();
 extern void main_P4();
@@ -226,7 +226,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     console.pid = 0;
     console.status   = STATUS_CREATED;
     console.ctx.cpsr = 0x50;
-    console.ctx.pc   = ( uint32_t )( &main_console2 );
+    console.ctx.pc   = ( uint32_t )( &main_console );
     console.ctx.sp   = ( uint32_t )( &tos_console  );
     console.priority_change = 1;
     console.priority = 30;
