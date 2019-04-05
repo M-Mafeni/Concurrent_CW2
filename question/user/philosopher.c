@@ -13,11 +13,10 @@ void concatAndPrint(char* s,char* id,char* data){
 void main_philosopher(){
     int chopsticks[16];
     for(int i = 0; i < 16; i++){
-        chopsticks[i] = 1;        chopsticks[i] = &var[i];
-
+        chopsticks[i] = 1;
     }
     //could not implement mmap or shm_open so had to use this for semaphores
-    memcpy(&tos_sharedMem,&var,sizeof(int) * 16);
+    memcpy(&tos_sharedMem,&chopsticks,sizeof(int) * 16);
     for(int i = 0; i < 16; i++){
         pid_t p = fork();
         if(p == 0){
